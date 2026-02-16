@@ -6,11 +6,38 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import NotificationDropdown from "./NotificationDropdown";
 
+const CHAT_HREF = "/chat";
+const POLL_UNREAD_MS = 10_000;
+
 export default function NavBar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const moreRef = useRef<HTMLDivElement>(null);
+
+  const fetchUnread = () => {
+    fetch("/api/messages/unread-count", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => data && typeof data.count === "number" && setUnreadMessages(data.count))
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchUnread();
+    const interval = setInterval(fetchUnread, POLL_UNREAD_MS);
+    const onFocus = () => fetchUnread();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
+
+  // Refetch unread when viewing chat so badge updates after reading
+  useEffect(() => {
+    if (pathname.startsWith(CHAT_HREF)) fetchUnread();
+  }, [pathname]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -23,6 +50,12 @@ export default function NavBar() {
   }, []);
 
   if (!user) return null;
+
+  const chatBadge = unreadMessages > 0 ? (
+    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold px-1 z-50 shadow ring-2 ring-surface-dark">
+      {unreadMessages > 99 ? "99+" : unreadMessages}
+    </span>
+  ) : null;
 
   const navItems = [
     { href: "/feed", label: "Feed", icon: "📷" },
@@ -71,13 +104,16 @@ export default function NavBar() {
               <Link
                 key={href}
                 href={href}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
-                  pathname === href || (href === "/chat" && pathname.startsWith("/chat"))
+                className={`relative px-3 py-2 rounded-lg text-sm font-medium transition whitespace-nowrap ${
+                  pathname === href || (href === CHAT_HREF && pathname.startsWith(CHAT_HREF))
                     ? "bg-brand-500/20 text-brand-400"
                     : "text-slate-400 hover:text-white hover:bg-surface-card"
                 }`}
               >
-                <span className="mr-1">{icon}</span>
+                <span className="relative inline-block mr-1 overflow-visible">
+                  {icon}
+                  {href === CHAT_HREF && chatBadge}
+                </span>
                 {label}
               </Link>
             ))}
@@ -124,14 +160,18 @@ export default function NavBar() {
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 rounded-lg transition min-h-[44px] ${
+              className={`relative flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 rounded-lg transition min-h-[44px] overflow-visible ${
                 isActive(href)
                   ? "text-brand-400 bg-brand-500/15"
                   : "text-slate-400 hover:text-white active:bg-surface-card"
               }`}
               aria-label={label}
+              aria-hidden={false}
             >
-              <span className="text-xl leading-none select-none" aria-hidden>{icon}</span>
+              <span className="relative inline-block text-xl leading-none select-none overflow-visible" aria-hidden>
+                {icon}
+                {href === CHAT_HREF && chatBadge}
+              </span>
               <span className="text-[10px] font-medium truncate w-full text-center">{label}</span>
             </Link>
           ))}

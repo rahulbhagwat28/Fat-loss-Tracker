@@ -194,12 +194,6 @@ export default function FriendsPage() {
 
       {activeTab === "find" && (
         <>
-          {requests.length > 0 && (
-            <div className="mb-4 p-4 rounded-xl bg-brand-500/20 border border-brand-500/50 text-white">
-              <p className="font-semibold">You have {requests.length} friend request{requests.length !== 1 ? "s" : ""}</p>
-              <p className="text-sm text-slate-300 mt-0.5">Accept or decline below. They’ll appear in Your friends after you accept.</p>
-            </div>
-          )}
           <div className="mb-6">
             {message && (
               <div
@@ -260,11 +254,21 @@ export default function FriendsPage() {
               <p className="mt-2 text-slate-500 text-sm">No one found. Try a different name.</p>
             )}
           </div>
+        </>
+      )}
 
-          <section>
+      {activeTab === "friends" && (
+        <section>
+          {requests.length > 0 && (
+            <div className="mb-4 p-4 rounded-xl bg-brand-500/20 border border-brand-500/50 text-white">
+              <p className="font-semibold">You have {requests.length} friend request{requests.length !== 1 ? "s" : ""}</p>
+              <p className="text-sm text-slate-300 mt-0.5">Accept or decline below. They'll appear in Your friends after you accept.</p>
+            </div>
+          )}
+          <section className="mb-6">
             <h2 className="text-lg font-semibold text-white mb-1">Friend requests</h2>
             <p className="text-sm text-slate-500 mb-3">
-              When someone sends you a request you’ll get a notification. Accept here — then they appear in Your friends.
+              When someone sends you a request you'll get a notification. Accept here — then they appear in Your friends.
             </p>
             {requests.length === 0 ? (
               <p className="text-slate-500 py-4">No pending requests.</p>
@@ -297,11 +301,6 @@ export default function FriendsPage() {
               </ul>
             )}
           </section>
-        </>
-      )}
-
-      {activeTab === "friends" && (
-        <section>
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <p className="text-sm text-slate-500">Only people you accepted (or who accepted you) appear here.</p>
             <button

@@ -21,10 +21,15 @@ export default function NotificationSound() {
   useEffect(() => {
     const poll = async () => {
       try {
-        const res = await fetch("/api/notifications");
+        const res = await fetch("/api/notifications", { credentials: "include" });
         if (!res.ok) return;
         const data = await res.json();
-        const notifications: Array<{ id: string; type: string }> = data.notifications || [];
+        const notifications: Array<{
+          id: string;
+          type: string;
+          actorId?: string;
+          actor?: { id: string; name: string; avatarUrl: string | null };
+        }> = data.notifications || [];
 
         if (isFirstFetchRef.current) {
           isFirstFetchRef.current = false;
@@ -32,6 +37,9 @@ export default function NotificationSound() {
           return;
         }
 
+        const newMessageNotif = notifications.find(
+          (n) => n.type === "message" && !seenIdsRef.current.has(n.id)
+        );
         const hasNewMessageOrComment = notifications.some(
           (n) => NOTIFICATION_TYPES_TO_SOUND.has(n.type) && !seenIdsRef.current.has(n.id)
         );
@@ -39,6 +47,20 @@ export default function NotificationSound() {
         if (hasNewMessageOrComment) {
           playNotificationSound();
           notifications.forEach((n) => seenIdsRef.current.add(n.id));
+          if (newMessageNotif) {
+            const fromUserId = newMessageNotif.actor?.id ?? newMessageNotif.actorId;
+            if (fromUserId) {
+              window.dispatchEvent(
+                new CustomEvent("open-chat-window", {
+                  detail: {
+                    fromUserId,
+                    actorName: newMessageNotif.actor?.name,
+                    actorAvatarUrl: newMessageNotif.actor?.avatarUrl ?? null,
+                  },
+                })
+              );
+            }
+          }
         }
       } catch {
         // ignore
