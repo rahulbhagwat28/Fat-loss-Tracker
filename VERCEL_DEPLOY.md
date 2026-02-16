@@ -16,6 +16,26 @@ Without `DATABASE_URL`, login and all database features will fail on Vercel.
 
 ---
 
+## Required: image uploads (Vercel Blob)
+
+The app uploads images (posts, avatar, progress pics) to **Vercel Blob**. Without this, uploads will fail with "Upload failed".
+
+1. **Create a Blob store**  
+   Vercel dashboard → your project → **Storage** tab → **Create Database** or **Connect Store** → choose **Blob** → Create. This creates a store and adds the env var automatically in many cases.
+
+2. **Add the token on Vercel (if not auto-added)**  
+   **Settings** → **Environment Variables** → Add:
+   - **Name:** `BLOB_READ_WRITE_TOKEN`
+   - **Value:** (from Storage → your Blob store → copy the token, or from the creation step).
+   Apply to **Production**, **Preview**, and **Development**.
+
+3. **Redeploy**  
+   Deployments → Redeploy so the new env var is used.
+
+You do **not** run `npm install` on Vercel yourself. When you have `@vercel/blob` in `package.json` and push your code, Vercel runs `npm install` during the build. Just add the env var and redeploy.
+
+---
+
 ## Fix: "Can't reach database server" (P1001)
 
 If the error shows a host like `...useast-1.aws.neon.tech`, the region name is wrong: it must be **us-east-1** (with a hyphen), not "useast-1".
