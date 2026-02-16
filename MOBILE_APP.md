@@ -1,10 +1,22 @@
-# Fat Loss Tracker – Mobile App (Capacitor)
+# Fat Loss Tracker – Mobile App
 
-A **native iOS and Android app** is set up in this repo. The app is a shell that loads your live Vercel site in a WebView, so you get one codebase (the Next.js app) and real installable apps.
+## Install from browser (Android) – no app store
+
+1. **Deploy** your app to Vercel and open the site in **Chrome** on your Android phone (e.g. `https://your-app.vercel.app`).
+2. **Install option:**
+   - Tap the **⋮** (three dots) in the top right → look for **"Install app"** or **"Add to Home screen"**.
+   - Or look for an **install icon** (⊕ or downward arrow) in Chrome’s address bar and tap it.
+3. Confirm → the app icon appears on your home screen and opens in full screen like an app.
+
+If you don’t see **Install app** in the menu, make sure you’re on the **deployed** site (HTTPS), not localhost. Redeploy after adding the service worker, then try again in Chrome.
 
 ---
 
-## What’s included
+## Native app (Capacitor)
+
+A **native iOS and Android app** is set up in this repo. The app is a shell that loads your live Vercel site in a WebView, so you get one codebase (the Next.js app) and real installable apps.
+
+### What’s included
 
 - **Capacitor** – `ios/` and `android/` native projects
 - **Config** – `capacitor.config.ts` points the app at your Vercel URL
