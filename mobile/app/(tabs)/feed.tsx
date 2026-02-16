@@ -15,10 +15,10 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Video } from "expo-av";
-import { apiJson, apiFetch } from "../../src/api";
+import { apiJson, apiFetch, getApiBase } from "../../src/api";
 import { useAuth } from "../../src/auth-context";
 import type { Post, PostComment } from "../../src/types";
-import { getApiBase } from "../../src/api";
+import * as FileSystem from "expo-file-system/legacy";
 import { theme } from "../../src/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -126,17 +126,34 @@ export default function FeedScreen() {
     setCreateError("");
     setUploadingImage(true);
     try {
-      const formData = new FormData();
-      formData.append("type", "post");
-      formData.append("file", {
-        uri: asset.uri,
-        name,
-        type: mime,
-      } as unknown as Blob);
-      const res = await apiFetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error((data as { error?: string }).error ?? "Upload failed");
-      setNewImageUrl((data as { url: string }).url);
+      // Use client upload (direct to Blob) for large files – bypasses 4.5MB server limit
+      const pathname = `posts/${Date.now()}-${name}`;
+      const tokenRes = await apiFetch("/api/upload/client", {
+        method: "POST",
+        body: JSON.stringify({
+          type: "blob.generate-client-token",
+          payload: { pathname, clientPayload: null, multipart: false },
+        }),
+      });
+      const tokenData = (await tokenRes.json().catch(() => ({}))) as { clientToken?: string; error?: string };
+      if (!tokenRes.ok || !tokenData.clientToken) {
+        throw new Error(tokenData.error ?? "Failed to get upload token");
+      }
+      const blobUrl = `https://vercel.com/api/blob/?pathname=${encodeURIComponent(pathname)}`;
+      const uploadResult = await FileSystem.uploadAsync(blobUrl, asset.uri, {
+        httpMethod: "PUT",
+        uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+        headers: {
+          Authorization: `Bearer ${tokenData.clientToken}`,
+          "x-api-version": "12",
+          "x-content-type": mime,
+        },
+      });
+      const body = JSON.parse(uploadResult.body || "{}") as { url?: string };
+      if (uploadResult.status >= 400 || !body.url) {
+        throw new Error((body as { error?: string }).error ?? "Upload failed");
+      }
+      setNewImageUrl(body.url);
       setPickedImageUri(asset.uri);
       setPickedMediaType(isVideo ? "video" : "image");
     } catch (e) {
