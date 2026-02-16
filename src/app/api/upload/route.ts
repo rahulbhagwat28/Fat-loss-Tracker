@@ -3,13 +3,27 @@ import { put } from "@vercel/blob";
 import { requireAuth } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 
+const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
+
+/** GET: quick check if Blob token is available in this deployment (no auth). */
+export async function GET() {
+  const configured = !!BLOB_TOKEN;
+  return NextResponse.json({
+    configured,
+    envVarName: "BLOB_READ_WRITE_TOKEN",
+    hint: configured
+      ? undefined
+      : "In Vercel: Storage → your Blob store → ensure project is connected, or Settings → Environment Variables → add BLOB_READ_WRITE_TOKEN for Production/Preview, then Redeploy.",
+  });
+}
+
 export async function POST(request: Request) {
   try {
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    if (!BLOB_TOKEN) {
       return NextResponse.json(
         {
           error:
-            "Image upload not configured. In Vercel: Storage → create Blob store, then Settings → Environment Variables → add BLOB_READ_WRITE_TOKEN, then redeploy.",
+            "Image upload not configured. Add BLOB_READ_WRITE_TOKEN in Vercel (Settings → Environment Variables), then Redeploy.",
         },
         { status: 503 }
       );
@@ -25,7 +39,7 @@ export async function POST(request: Request) {
     const filename = `${uuidv4()}.${ext}`;
     const pathname = `uploads/${type}/${filename}`;
 
-    const blob = await put(pathname, file, { access: "public" });
+    const blob = await put(pathname, file, { access: "public", token: BLOB_TOKEN });
     return NextResponse.json({ url: blob.url });
   } catch (e) {
     console.error(e);

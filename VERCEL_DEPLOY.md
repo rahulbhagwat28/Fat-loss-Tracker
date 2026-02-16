@@ -50,21 +50,39 @@ Without `DATABASE_URL`, login and all database features will fail on Vercel.
 
 ## Required: image uploads (Vercel Blob)
 
-The app uploads images (posts, avatar, progress pics) to **Vercel Blob**. Without this, uploads will fail with "Upload failed".
+The app uploads images (posts, avatar, progress pics) to **Vercel Blob**. Without this, uploads will fail with "Image upload not configured" or "Upload failed".
 
 1. **Create a Blob store**  
-   Vercel dashboard → your project → **Storage** tab → **Create Database** or **Connect Store** → choose **Blob** → Create. This creates a store and adds the env var automatically in many cases.
+   Vercel dashboard → your project → **Storage** tab → **Create Database** or **Connect Store** → choose **Blob** → Create. This creates a store and may add the env var automatically.
 
 2. **Add the token on Vercel (if not auto-added)**  
    **Settings** → **Environment Variables** → Add:
    - **Name:** `BLOB_READ_WRITE_TOKEN`
-   - **Value:** (from Storage → your Blob store → copy the token, or from the creation step).
-   Apply to **Production**, **Preview**, and **Development**.
+   - **Value:** (from **Storage** → your Blob store → copy the token, or from the creation step).
+   **Important:** Apply to **Production**, **Preview**, and **Development** (check all three).
 
 3. **Redeploy**  
-   Deployments → Redeploy so the new env var is used.
+   **Deployments** → ⋮ on the latest deployment → **Redeploy**. New env vars are only applied to new deployments.
 
 You do **not** run `npm install` on Vercel yourself. When you have `@vercel/blob` in `package.json` and push your code, Vercel runs `npm install` during the build. Just add the env var and redeploy.
+
+---
+
+## Fix: "Image upload not configured" (Blob already created)
+
+If you already created a Blob store but the app still shows this error:
+
+1. **Confirm the variable name**  
+   It must be exactly **`BLOB_READ_WRITE_TOKEN`** (no typo, same casing).
+
+2. **Get the token from the Blob store**  
+   Vercel → your project → **Storage** → click your **Blob** store → **Settings** or **.env** tab → copy the value for `BLOB_READ_WRITE_TOKEN` (or the token shown there). Paste it in **Settings → Environment Variables** as `BLOB_READ_WRITE_TOKEN`.
+
+3. **Apply to all environments**  
+   When adding/editing the variable, select **Production**, **Preview**, and **Development**. Save.
+
+4. **Redeploy**  
+   **Deployments** → ⋮ on latest → **Redeploy** (optionally **Redeploy with clear cache**). The running app only sees env vars that existed when that deployment was built.
 
 ---
 
