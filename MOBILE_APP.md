@@ -1,71 +1,116 @@
-# Fat Loss Tracker – Mobile App
+# Fat Loss Tracker – Mobile App (Capacitor)
 
-Your app is set up as an **installable Progressive Web App (PWA)**. Users can add it to their home screen and open it like a native app.
-
----
-
-## Option 1: Install as PWA (no app store)
-
-Already configured. After you deploy:
-
-### On Android (Chrome)
-1. Open your app URL (e.g. `https://your-app.vercel.app`).
-2. Tap the **⋮** menu → **“Add to Home screen”** or **“Install app”**.
-3. Confirm. An icon appears on the home screen and opens in fullscreen.
-
-### On iPhone / iPad (Safari)
-1. Open your app URL in **Safari** (not Chrome).
-2. Tap the **Share** button (square with arrow).
-3. Tap **“Add to Home Screen”**.
-4. Edit the name if you want → **Add**. The icon appears on the home screen.
-
-### What’s included
-- **Manifest** (`/manifest.webmanifest`) – name, icons, theme color, standalone display.
-- **Icons** – `public/icon-192.png` and `public/icon-512.png` (replace with your own branding if you like).
-- **Theme color** – green (`#10b981`) for status bar / splash.
-- **Viewport** – mobile-friendly, safe areas, no zoom issues.
-
-No extra build step: deploy as usual and use “Add to Home Screen” on each device.
+A **native iOS and Android app** is set up in this repo. The app is a shell that loads your live Vercel site in a WebView, so you get one codebase (the Next.js app) and real installable apps.
 
 ---
 
-## Option 2: Native app (App Store / Play Store) with Capacitor
+## What’s included
 
-To ship a **native** iOS/Android app (and optionally publish to the stores), you can wrap the existing web app with [Capacitor](https://capacitorjs.com/).
+- **Capacitor** – `ios/` and `android/` native projects
+- **Config** – `capacitor.config.ts` points the app at your Vercel URL
+- **Scripts** – `npm run mobile:ios` and `npm run mobile:android` to open the projects
 
-### High-level steps
+---
 
-1. **Build the web app**  
-   Use your production URL or a static export:
-   - **Option A:** Point Capacitor at your live URL (e.g. `https://your-app.vercel.app`) so the app loads the site in a WebView.
-   - **Option B:** Static export and serve the built files from the app (more setup, works offline).
+## 1. Set your app URL
 
-2. **Add Capacitor to the project**
-   ```bash
-   npm install @capacitor/core @capacitor/cli
-   npx cap init "Fat Loss Fitness Tracker" com.yourcompany.fatlosstracker
-   ```
+The mobile app loads your deployed site. Set the URL in one of these ways:
 
-3. **Add platforms**
-   ```bash
-   npm install @capacitor/ios @capacitor/android
-   npx cap add ios
-   npx cap add android
-   ```
+**Option A – In the config (recommended)**  
+Edit `capacitor.config.ts` and set `serverUrl` to your Vercel URL, e.g.:
 
-4. **Configure the start URL** (if using Option A)  
-   In `capacitor.config.ts`, set the app to load your Vercel URL so the “app” is just your existing site in a native shell.
+```ts
+const serverUrl = "https://your-app.vercel.app";
+```
 
-5. **Open in Xcode / Android Studio and build**
-   ```bash
-   npx cap open ios
-   npx cap open android
-   ```
-   Then archive (iOS) or build release (Android) and submit to the stores.
+**Option B – With an env var**  
+Create a `.env.local` (or set in your shell):
 
-### Notes
-- **Login / cookies:** Your app already uses cookies; in a WebView they work like in the browser. Ensure your API and auth support same-origin or CORS from the Capacitor app if you ever switch to a different origin.
-- **Push notifications:** For native push you’d add Capacitor Push Notifications and a backend (e.g. Firebase or OneSignal).
-- **Icons and splash:** Replace default Capacitor icons/splash with your `icon-512.png` (and any splash screen) for a consistent look.
+```bash
+CAPACITOR_SERVER_URL=https://your-app.vercel.app
+```
 
-Using **Option 1 (PWA)** is enough for most users to “install” and use the app from the home screen. Use **Option 2 (Capacitor)** when you need a store listing, native APIs, or push notifications.
+Then run the mobile commands. The config reads this when it’s loaded.
+
+---
+
+## 2. Run on a simulator or device
+
+### iOS (Mac only, Xcode required)
+
+```bash
+npm run mobile:ios
+```
+
+This opens the project in Xcode. Then:
+
+1. Pick a simulator (e.g. iPhone 15) or a connected device.
+2. Press **Run** (▶) to build and run.
+
+To run from the terminal instead:
+
+```bash
+npm run mobile:run:ios
+```
+
+### Android (Android Studio required)
+
+```bash
+npm run mobile:android
+```
+
+This opens the project in Android Studio. Then:
+
+1. Pick an emulator or connected device.
+2. Press **Run** (▶) to build and run.
+
+To run from the terminal:
+
+```bash
+npm run mobile:run:android
+```
+
+---
+
+## 3. After changing the web app or config
+
+When you change:
+
+- `capacitor.config.ts`, or  
+- Anything in `public/` (e.g. icons),
+
+sync the native projects:
+
+```bash
+npm run mobile:sync
+```
+
+Then run the app again from Xcode or Android Studio (or `mobile:run:ios` / `mobile:run:android`).
+
+---
+
+## 4. Changing the app URL later
+
+1. Update `serverUrl` in `capacitor.config.ts` (or `CAPACITOR_SERVER_URL`).
+2. Run `npm run mobile:sync`.
+3. Rebuild and run the app.
+
+---
+
+## 5. Publishing to the App Store / Play Store
+
+- **iOS:** In Xcode, set up signing (Apple Developer account), then **Product → Archive** and upload to App Store Connect.
+- **Android:** In Android Studio, build a release bundle (e.g. **Build → Generate Signed Bundle / APK**) and upload to Google Play Console.
+
+Use your own app icons and splash screens in the `ios/` and `android/` projects (replace the default assets) so the store listing matches your brand.
+
+---
+
+## PWA (install from browser)
+
+Users can also install the app from the browser without the stores:
+
+- **Android (Chrome):** Menu → “Install app” / “Add to Home screen”.
+- **iPhone (Safari):** Share → “Add to Home Screen”.
+
+See the manifest and icons in `src/app/manifest.ts` and `public/icon-192.png`, `public/icon-512.png`.

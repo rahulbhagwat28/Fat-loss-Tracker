@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Fat Loss Fitness Tracker</string>
+    <string name="title_activity_main">Fat Loss Fitness Tracker</string>
+    <string name="package_name">com.fatlosstracker.app</string>
+    <string name="custom_url_scheme">com.fatlosstracker.app</string>
+</resources>
