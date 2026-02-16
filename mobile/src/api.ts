@@ -7,7 +7,13 @@ const getApiUrl = (): string => {
   if (Platform.OS === "web" && typeof window !== "undefined" && /^https?:\/\/localhost(:\d+)?$/.test(window.location.origin)) {
     return "http://localhost:3000";
   }
-  // When you open the app via QR code (Expo Go), use the same machine as the API server
+  // Prefer explicit API URL (e.g. Vercel) so app works with deployed backend when using Expo Go
+  const extra = Constants.expoConfig?.extra as { apiUrl?: string } | undefined;
+  const fromExtra = extra?.apiUrl ?? "";
+  const envUrl = process.env.EXPO_PUBLIC_API_URL ?? "";
+  const explicit = (fromExtra || envUrl).trim();
+  if (explicit && !explicit.includes("your-app.vercel.app")) return explicit.replace(/\/$/, "");
+  // When no env set: Expo Go / same machine – use dev server host and port 3000
   const hostUri = Constants.expoConfig?.hostUri as string | undefined;
   if (hostUri) {
     try {
@@ -16,11 +22,7 @@ const getApiUrl = (): string => {
       if (host) return `http://${host}:3000`;
     } catch {}
   }
-  const extra = Constants.expoConfig?.extra as { apiUrl?: string } | undefined;
-  const fromExtra = extra?.apiUrl ?? "";
-  const url = fromExtra || process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000";
-  if (url.includes("your-app.vercel.app")) return "http://localhost:3000";
-  return url;
+  return "http://localhost:3000";
 };
 
 export const getApiBase = getApiUrl;

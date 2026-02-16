@@ -116,7 +116,10 @@ export default function FeedScreen() {
     });
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
-    const isVideo = "duration" in asset && typeof (asset as { duration?: number }).duration === "number";
+    const hasDuration = "duration" in asset && typeof (asset as { duration?: number }).duration === "number";
+    const mimeVideo = typeof asset.mimeType === "string" && asset.mimeType.startsWith("video/");
+    const nameVideo = /\.(mp4|mov|webm|m4v|avi)(\?|$)/i.test(asset.fileName ?? "");
+    const isVideo = hasDuration || mimeVideo || nameVideo;
     const ext = asset.fileName?.match(/\.(\w+)$/)?.[1] ?? (isVideo ? "mp4" : "jpg");
     const name = asset.fileName ?? (isVideo ? "video.mp4" : "image.jpg");
     const mime = asset.mimeType ?? (isVideo ? "video/mp4" : "image/jpeg");
@@ -137,7 +140,12 @@ export default function FeedScreen() {
       setPickedImageUri(asset.uri);
       setPickedMediaType(isVideo ? "video" : "image");
     } catch (e) {
-      setCreateError(e instanceof Error ? e.message : "Upload failed");
+      const msg = e instanceof Error ? e.message : "Upload failed";
+      setCreateError(
+        msg === "Upload failed" || msg.includes("failed")
+          ? `${msg}. If you chose a video, try a shorter clip (under 1 min) or a smaller file.`
+          : msg
+      );
     } finally {
       setUploadingImage(false);
     }
