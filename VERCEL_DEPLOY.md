@@ -16,6 +16,18 @@ Without `DATABASE_URL`, login and all database features will fail on Vercel.
 
 ---
 
+## Fix: "Can't reach database server" (P1001)
+
+If the error shows a host like `...useast-1.aws.neon.tech`, the region name is wrong: it must be **us-east-1** (with a hyphen), not "useast-1".
+
+1. Open [Neon Console](https://console.neon.tech) → your project.
+2. Copy the **connection string** again (use **Pooled connection**).
+3. Check the host in the URL: it should contain **us-east-1** or **us-west-1** etc. (with the hyphen).
+4. In Vercel → Settings → Environment Variables → edit **DATABASE_URL** and paste the corrected string.
+5. Redeploy.
+
+---
+
 ## Fix: "Unable to open the database file" on Vercel
 
 This error means the **deployed app is still using SQLite** (a file), which doesn’t work on Vercel. Do all of the following:
