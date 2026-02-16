@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  posts          Post[]
+  comments       Comment[]
+  likes          Like[]
+  sentRequests   FriendRequest[]   @relation("SentRequests")
+  receivedRequests FriendRequest[] @relation("ReceivedRequests")
+  friendships1   Friendship[]     @relation("User1")
+  friendships2   Friendship[]     @relation("User2")
+  sentMessages   Message[]       @relation("SentMessages")
+  receivedMessages Message[]     @relation("ReceivedMessages")
+  notifications       Notification[] @relation("ReceivedNotifications")
+  notificationsAsActor Notification[] @relation("NotificationActor")
+  healthLogs          HealthLog[]
+  progressPics        ProgressPic[]
+}
+
+model ProgressPic {
+  id        String   @id @default(cuid())
+  userId    String
+  imageUrl  String
+  label     String?  // e.g. "Week 1", "Week 2"
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model HealthLog {
+  id           String   @id @default(cuid())
+  userId       String
+  logDate      String   // YYYY-MM-DD
+  weight       Float?   // lbs
+  calories     Int?
+  protein      Int?     // grams
+  carbs        Int?     // grams
+  fat          Int?     // grams
+  sleepHours   Float?
+  energyLevel  Int?     // 1-10
+  steps        Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, logDate])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // friend_request | friend_accepted | comment | message | like
+  actorId   String
+  refId    String?   // friendRequest id or comment id
+  postId   String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user  User  @relation("ReceivedNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  caption   String?
+  userId    String
+  createdAt DateTime @default(now())
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments Comment[]
+  likes    Like[]
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model FriendRequest {
+  id        String   @id @default(cuid())
+  fromId    String
+  toId      String
+  status    String   @default("pending") // PENDING | ACCEPTED | REJECTED | CANCELLED (stored lowercase)
+  createdAt DateTime @default(now())
+
+  from User @relation("SentRequests", fields: [fromId], references: [id], onDelete: Cascade)
+  to   User @relation("ReceivedRequests", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@unique([fromId, toId])
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  user1Id   String
+  user2Id   String
+  createdAt DateTime @default(now())
+
+  user1 User @relation("User1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2 User @relation("User2", fields: [user2Id], references: [id], onDelete: Cascade)
+
+  @@unique([user1Id, user2Id])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  text      String
+  senderId  String
+  receiverId String
+  createdAt DateTime @default(now())
+  read      Boolean  @default(false)
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+}
