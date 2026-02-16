@@ -1,6 +1,57 @@
 # Deploy Fat Loss Fitness Tracker to Vercel
 
-The app is **ready for Vercel**. It uses **PostgreSQL** (via `DATABASE_URL`). You need a **hosted Postgres** (e.g. [Neon](https://neon.tech) free tier).
+The app is **ready for Vercel**. It uses **PostgreSQL** (via `DATABASE_URL`).
+
+---
+
+## Required: before login works on Vercel
+
+1. **Get a Postgres URL:** [neon.tech](https://neon.tech) → Sign up → New project → copy **connection string**.
+2. **Add it on Vercel:** [vercel.com](https://vercel.com) → Your project → **Settings** → **Environment Variables** → Add:
+   - **Name:** `DATABASE_URL`
+   - **Value:** your Neon connection string (paste the full `postgresql://...` URL).
+3. **Redeploy:** Deployments → ⋮ on latest deployment → **Redeploy**.
+
+Without `DATABASE_URL`, login and all database features will fail on Vercel.
+
+---
+
+## Where to get the connection string (username & password)
+
+You **don’t look up username and password separately**. Neon gives you one **connection string** that already contains them:
+
+- Go to [console.neon.tech](https://console.neon.tech) → open your project.
+- On the **Dashboard** you’ll see **Connection string** (often “Pooled connection”).
+- Click **Copy** – that full URL is your `DATABASE_URL`.  
+  It looks like:  
+  `postgresql://neondb_owner:SomePassword123@ep-xxx.region.aws.neon.tech/neondb?sslmode=require`  
+  The part after `://` and before `@` is `username:password`; you never need to type them separately.
+
+**If you lost the password or never saved the URL:**  
+In the project go to **Settings** (or **Roles**). Reset the database user’s password. Neon will show a **new connection string** – use that as `DATABASE_URL`.
+
+---
+
+## Do I need to migrate again?
+
+**No.** Your Vercel build already runs:
+
+```bash
+prisma generate && prisma db push && next build
+```
+
+So on **every deploy**, `prisma db push` runs and applies your schema to the Neon database. You don’t run migrations or `db push` yourself for Vercel.
+
+- **First deploy** with `DATABASE_URL` set: tables are created in Neon.
+- **Later deploys**: schema changes are applied automatically.
+
+Only if you want to apply the schema from your machine (e.g. before first deploy) run once:
+
+```bash
+npx prisma db push
+```
+
+(with `DATABASE_URL` in `.env` or set in the shell).
 
 ---
 
