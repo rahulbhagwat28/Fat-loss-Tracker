@@ -25,6 +25,10 @@ prisma/dev.db-journal
 # uploads (optional: remove if you want to commit sample images)
 public/uploads
 
+# Capacitor sync copies public/ into native projects; don't commit those copies
+ios/App/App/public/uploads
+android/app/src/main/assets/public/uploads
+
 # IDE
 .idea
 .vscode
