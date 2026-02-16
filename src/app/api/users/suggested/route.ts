@@ -18,7 +18,11 @@ export async function GET() {
       select: { toId: true },
     });
     const pendingToIds = new Set(pendingSent.map((r) => r.toId));
-    const excludeIds = new Set([session.id, ...friendIds, ...pendingToIds]);
+    const excludeIds = new Set([
+      session.id,
+      ...Array.from(friendIds),
+      ...Array.from(pendingToIds),
+    ]);
 
     const users = await prisma.user.findMany({
       where: { id: { notIn: Array.from(excludeIds) } },
