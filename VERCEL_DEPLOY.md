@@ -16,6 +16,77 @@ Without `DATABASE_URL`, login and all database features will fail on Vercel.
 
 ---
 
+## Fix: "Unable to open the database file" on Vercel
+
+This error means the **deployed app is still using SQLite** (a file), which doesn’t work on Vercel. Do all of the following:
+
+1. **Use PostgreSQL in the repo**  
+   In `prisma/schema.prisma` the datasource must be:
+   ```prisma
+   datasource db {
+     provider = "postgresql"
+     url      = env("DATABASE_URL")
+   }
+   ```
+   (No `provider = "sqlite"` or `file:./dev.db`.)
+
+2. **Push your code**  
+   Commit and push so the branch Vercel deploys from has the PostgreSQL schema.  
+   Example:
+   ```bash
+   git add prisma/schema.prisma
+   git commit -m "Use PostgreSQL for Vercel"
+   git push
+   ```
+
+3. **Set DATABASE_URL on Vercel**  
+   Vercel → your project → **Settings** → **Environment Variables** → add:
+   - **Name:** `DATABASE_URL`
+   - **Value:** your Neon connection string (from [Neon](https://console.neon.tech), copy the full `postgresql://...` URL).  
+   Apply to **Production**, **Preview**, and **Development**.
+
+4. **Redeploy (no cache)**  
+   Deployments → ⋮ on the latest deployment → **Redeploy**.  
+   If it still fails, try **Redeploy** and enable **Clear build cache**, then deploy again.
+
+After this, the app will use Neon (Postgres) on Vercel and the error will stop.
+
+---
+
+## Create a database in Neon (step by step)
+
+1. **Open Neon**  
+   Go to [neon.tech](https://neon.tech) in your browser.
+
+2. **Sign up**  
+   Click **Sign up** and create an account (e.g. with GitHub or email).
+
+3. **Create a project**  
+   After login you’ll see the dashboard. Click **New Project**.
+
+4. **Set project details**  
+   - **Name:** e.g. `fat-loss-tracker` (or any name).  
+   - **Region:** pick one close to you (e.g. US East).  
+   - Leave other options as default.  
+   Click **Create project**.
+
+5. **Copy the connection string**  
+   When the project is ready you’ll see a **Connection string** section.  
+   - Make sure **“Pooled connection”** (or “Connection string”) is selected.  
+   - Click **Copy** next to the string.  
+   It will look like:  
+   `postgresql://neondb_owner:xxxxx@ep-xxxxx.region.aws.neon.tech/neondb?sslmode=require`  
+   This is your **DATABASE_URL**.
+
+6. **Use it in the app**  
+   - **Local:** Put it in your project’s `.env` as  
+     `DATABASE_URL="paste_here"`  
+   - **Vercel:** Project → Settings → Environment Variables → add **Name** `DATABASE_URL`, **Value** paste the same string → Save, then redeploy.
+
+That’s it. No need to create tables manually – your app’s build runs `prisma db push` and creates them.
+
+---
+
 ## Where to get the connection string (username & password)
 
 You **don’t look up username and password separately**. Neon gives you one **connection string** that already contains them:
