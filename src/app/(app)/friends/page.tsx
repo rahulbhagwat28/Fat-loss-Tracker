@@ -167,11 +167,11 @@ export default function FriendsPage() {
     <div className="min-w-0">
       <h1 className="font-display text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">Friends</h1>
 
-      <div className="flex gap-1 sm:gap-2 border-b border-surface-border mb-4 sm:mb-6 overflow-x-auto">
+      <div className="grid grid-cols-2 sm:flex sm:gap-2 border-b border-surface-border mb-4 sm:mb-6 -mx-3 sm:mx-0 px-3 sm:px-0">
         <button
           type="button"
           onClick={() => setActiveTab("find")}
-          className={`px-3 sm:px-4 py-2.5 rounded-t-lg font-medium transition touch-manipulation flex-shrink-0 ${
+          className={`px-3 sm:px-4 py-3 sm:py-2.5 rounded-t-lg font-medium transition touch-manipulation text-sm sm:text-base ${
             activeTab === "find"
               ? "bg-surface-card text-white border border-surface-border border-b-0 -mb-px"
               : "text-slate-500 hover:text-white"
@@ -182,7 +182,7 @@ export default function FriendsPage() {
         <button
           type="button"
           onClick={() => setActiveTab("friends")}
-          className={`px-3 sm:px-4 py-2.5 rounded-t-lg font-medium transition touch-manipulation flex-shrink-0 ${
+          className={`px-3 sm:px-4 py-3 sm:py-2.5 rounded-t-lg font-medium transition touch-manipulation text-sm sm:text-base truncate ${
             activeTab === "friends"
               ? "bg-surface-card text-white border border-surface-border border-b-0 -mb-px"
               : "text-slate-500 hover:text-white"

@@ -119,27 +119,27 @@ export default function NavBar() {
 
       {/* Mobile bottom nav */}
       <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden border-t border-surface-border bg-surface-dark/95 backdrop-blur pb-safe-bottom">
-        <div className="max-w-lg mx-auto px-2 flex items-center justify-around h-14">
+        <div className="max-w-lg mx-auto px-1 flex items-stretch justify-around min-h-[56px] [padding-bottom:env(safe-area-inset-bottom)]">
           {mainNav.map(({ href, label, icon }) => (
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 rounded-lg transition ${
+              className={`flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 rounded-lg transition min-h-[44px] ${
                 isActive(href)
                   ? "text-brand-400 bg-brand-500/15"
                   : "text-slate-400 hover:text-white active:bg-surface-card"
               }`}
               aria-label={label}
             >
-              <span className="text-lg leading-none">{icon}</span>
+              <span className="text-xl leading-none select-none" aria-hidden>{icon}</span>
               <span className="text-[10px] font-medium truncate w-full text-center">{label}</span>
             </Link>
           ))}
-          <div className="relative flex-1 min-w-0" ref={moreRef}>
+          <div className="relative flex-1 min-w-0 flex flex-col" ref={moreRef}>
             <button
               type="button"
               onClick={() => setMoreOpen((o) => !o)}
-              className={`w-full flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg transition ${
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 rounded-lg transition min-h-[44px] ${
                 moreNav.some(({ href }) => pathname === href)
                   ? "text-brand-400 bg-brand-500/15"
                   : "text-slate-400 hover:text-white active:bg-surface-card"
@@ -147,21 +147,21 @@ export default function NavBar() {
               aria-label="More"
               aria-expanded={moreOpen}
             >
-              <span className="text-lg leading-none">⋯</span>
+              <span className="text-xl leading-none select-none" aria-hidden>⋯</span>
               <span className="text-[10px] font-medium">More</span>
             </button>
             {moreOpen && (
-              <div className="absolute bottom-full left-0 right-0 mb-1 py-2 rounded-xl border border-surface-border bg-surface-card shadow-xl overflow-hidden">
+              <div className="absolute bottom-full left-0 right-0 mb-1 py-2 rounded-xl border border-surface-border bg-surface-card shadow-xl overflow-y-auto max-h-[70vh] min-w-[180px]">
                 {moreNav.map(({ href, label, icon }) => (
                   <Link
                     key={href}
                     href={href}
                     onClick={() => setMoreOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition ${
+                    className={`flex items-center gap-3 px-4 py-3 min-h-[44px] text-sm font-medium transition touch-manipulation ${
                       pathname === href ? "bg-brand-500/20 text-brand-400" : "text-slate-200 hover:bg-surface-dark/50"
                     }`}
                   >
-                    <span>{icon}</span>
+                    <span aria-hidden>{icon}</span>
                     {label}
                   </Link>
                 ))}
@@ -171,9 +171,9 @@ export default function NavBar() {
                     setMoreOpen(false);
                     logout().then(() => window.location.assign("/login"));
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/15 transition text-left"
+                  className="w-full flex items-center gap-3 px-4 py-3 min-h-[44px] text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/15 transition text-left touch-manipulation"
                 >
-                  <span>🚪</span>
+                  <span aria-hidden>🚪</span>
                   Log out
                 </button>
               </div>
