@@ -7,7 +7,7 @@ export async function DELETE(
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuth(request);
     const { userId: otherId } = await params;
     if (otherId === session.id) {
       return NextResponse.json({ error: "Cannot unfriend yourself" }, { status: 400 });

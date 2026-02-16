@@ -13,7 +13,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-export async function getSession(): Promise<{
+export async function getSession(request?: Request): Promise<{
   id: string;
   email: string;
   name: string;
@@ -23,8 +23,14 @@ export async function getSession(): Promise<{
   heightInches: number | null;
   weightLbs: number | null;
 } | null> {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
+  let sessionId: string | null = null;
+  if (request) {
+    sessionId = request.headers.get("x-session-id") || request.headers.get("authorization")?.replace(/^Bearer\s+/i, "")?.trim() || null;
+  }
+  if (!sessionId) {
+    const cookieStore = await cookies();
+    sessionId = cookieStore.get(SESSION_COOKIE)?.value ?? null;
+  }
   if (!sessionId) return null;
 
   const user = await prisma.user.findFirst({
@@ -59,8 +65,8 @@ export async function clearSession() {
   cookieStore.delete(SESSION_COOKIE);
 }
 
-export async function requireAuth() {
-  const session = await getSession();
+export async function requireAuth(request?: Request) {
+  const session = await getSession(request);
   if (!session) throw new Error("Unauthorized");
   return session;
 }

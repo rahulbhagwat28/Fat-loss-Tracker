@@ -4,6 +4,38 @@ The app is **ready for Vercel**. It uses **PostgreSQL** (via `DATABASE_URL`).
 
 ---
 
+## Quick deploy (you already have a Vercel project)
+
+If the project is already connected to Vercel:
+
+1. **Push your code**  
+   From the project root:
+   ```bash
+   git add .
+   git commit -m "Deploy latest"
+   git push
+   ```
+   Vercel will auto-deploy from your connected branch (usually `main`).
+
+2. **Set environment variables** (if not set yet)  
+   Vercel → Your project → **Settings** → **Environment Variables**:
+   - **`DATABASE_URL`** – PostgreSQL URL (e.g. from [Neon](https://neon.tech): copy the connection string).
+   - **`BLOB_READ_WRITE_TOKEN`** – For image uploads: **Storage** → create/connect **Blob** store → copy token.
+
+3. **Redeploy**  
+   **Deployments** → ⋮ on latest → **Redeploy** (so new env vars are used).
+
+**First time connecting this repo to Vercel:**
+
+1. Go to [vercel.com](https://vercel.com) → **Add New** → **Project**.
+2. **Import** your Git repository (GitHub/GitLab/Bitbucket).
+3. **Root Directory:** leave as `.` (repo root).
+4. **Build Command:** leave default (`next build`); the root `package.json` has the right script.
+5. Add **Environment Variables** (see above): `DATABASE_URL`, `BLOB_READ_WRITE_TOKEN`.
+6. Click **Deploy**. After the build, the web app is live at `https://your-project.vercel.app`.
+
+---
+
 ## Required: before login works on Vercel
 
 1. **Get a Postgres URL:** [neon.tech](https://neon.tech) → Sign up → New project → copy **connection string**.

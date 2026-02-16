@@ -14,7 +14,7 @@ export async function POST(request: Request) {
         { status: 503 }
       );
     }
-    await requireAuth();
+    await requireAuth(request);
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const type = (formData.get("type") as string) || "post"; // "post" | "avatar" | "progress"

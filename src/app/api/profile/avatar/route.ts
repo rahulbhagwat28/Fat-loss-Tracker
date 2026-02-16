@@ -4,7 +4,7 @@ import { requireAuth } from "@/lib/auth";
 
 export async function PATCH(request: Request) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuth(request);
     const { avatarUrl } = await request.json();
     if (!avatarUrl) {
       return NextResponse.json({ error: "avatarUrl required" }, { status: 400 });

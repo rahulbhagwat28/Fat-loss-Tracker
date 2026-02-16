@@ -2,9 +2,24 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 
+export async function GET(request: Request) {
+  try {
+    const session = await requireAuth(request);
+    const user = await prisma.user.findUnique({
+      where: { id: session.id },
+      select: { age: true, sex: true, heightInches: true, weightLbs: true },
+    });
+    if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json(user);
+  } catch (e) {
+    console.error(e);
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+}
+
 export async function PATCH(request: Request) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuth(request);
     const body = await request.json();
     const data: {
       avatarUrl?: string;

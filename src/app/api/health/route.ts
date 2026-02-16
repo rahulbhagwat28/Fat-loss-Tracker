@@ -4,7 +4,7 @@ import { requireAuth } from "@/lib/auth";
 
 export async function GET(request: Request) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuth(request);
     const { searchParams } = new URL(request.url);
     const limit = Math.min(Number(searchParams.get("limit")) || 30, 500);
     const logs = await prisma.healthLog.findMany({
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuth(request);
     const body = await request.json();
     const {
       logDate,
