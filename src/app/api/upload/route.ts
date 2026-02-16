@@ -5,6 +5,15 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function POST(request: Request) {
   try {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      return NextResponse.json(
+        {
+          error:
+            "Image upload not configured. In Vercel: Storage → create Blob store, then Settings → Environment Variables → add BLOB_READ_WRITE_TOKEN, then redeploy.",
+        },
+        { status: 503 }
+      );
+    }
     await requireAuth();
     const formData = await request.formData();
     const file = formData.get("file") as File | null;

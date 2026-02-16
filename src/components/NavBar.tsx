@@ -107,7 +107,7 @@ export default function NavBar() {
             <button
               type="button"
               onClick={() => logout().then(() => window.location.assign("/login"))}
-              className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/15 transition"
+              className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/15 transition whitespace-nowrap"
               aria-label="Log out"
             >
               <span className="text-base">🚪</span>
@@ -151,13 +151,13 @@ export default function NavBar() {
               <span className="text-[10px] font-medium">More</span>
             </button>
             {moreOpen && (
-              <div className="absolute bottom-full left-0 right-0 mb-1 py-2 rounded-xl border border-surface-border bg-surface-card shadow-xl overflow-y-auto max-h-[70vh] min-w-[180px]">
+              <div className="absolute bottom-full right-0 left-auto mb-1 py-2 rounded-xl border border-surface-border bg-surface-card shadow-xl overflow-y-auto max-h-[70vh] min-w-[220px] w-max max-w-[min(100vw-2rem,320px)]">
                 {moreNav.map(({ href, label, icon }) => (
                   <Link
                     key={href}
                     href={href}
                     onClick={() => setMoreOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 min-h-[44px] text-sm font-medium transition touch-manipulation ${
+                    className={`flex items-center gap-3 px-4 py-3 min-h-[44px] text-sm font-medium transition touch-manipulation whitespace-nowrap ${
                       pathname === href ? "bg-brand-500/20 text-brand-400" : "text-slate-200 hover:bg-surface-dark/50"
                     }`}
                   >
@@ -171,7 +171,7 @@ export default function NavBar() {
                     setMoreOpen(false);
                     logout().then(() => window.location.assign("/login"));
                   }}
-                  className="w-full flex items-center gap-3 px-4 py-3 min-h-[44px] text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/15 transition text-left touch-manipulation"
+                  className="w-full flex items-center gap-3 px-4 py-3 min-h-[44px] text-sm font-medium text-slate-400 hover:text-red-400 hover:bg-red-500/15 transition text-left touch-manipulation whitespace-nowrap"
                 >
                   <span aria-hidden>🚪</span>
                   Log out
