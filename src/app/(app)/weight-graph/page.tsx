@@ -44,16 +44,19 @@ export default function WeightGraphPage() {
       .then((res) => res.json())
       .then((logs: HealthLog[]) => {
         const withWeight = (Array.isArray(logs) ? logs : [])
-          .filter((l) => l.weight != null && l.weight > 0)
-          .map((l) => ({
-            date: l.logDate,
-            weight: l.weight as number,
-            displayDate: new Date(l.logDate + "T12:00:00").toLocaleDateString(undefined, {
-              month: "short",
-              day: "numeric",
-              year: "2-digit",
-            }),
-          }))
+          .filter((l) => l.weight != null && Number(l.weight) > 0)
+          .map((l) => {
+            const w = Number(l.weight);
+            return {
+              date: l.logDate,
+              weight: w,
+              displayDate: new Date(l.logDate + "T12:00:00").toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "2-digit",
+              }),
+            };
+          })
           .sort((a, b) => a.date.localeCompare(b.date));
         setData(withWeight);
       })
@@ -175,7 +178,7 @@ export default function WeightGraphPage() {
                     fill="#94a3b8"
                     fontSize={11}
                   >
-                    {tick.toFixed(1)} lbs
+                    {Math.round(tick)} lbs
                   </text>
                 );
               })}
@@ -216,7 +219,7 @@ export default function WeightGraphPage() {
                 }}
               >
                 <span className="text-slate-500">{data[hoverIndex].displayDate}</span>
-                <span className="ml-2 font-medium text-brand-400">{data[hoverIndex].weight} lbs</span>
+                <span className="ml-2 font-medium text-brand-400">{Math.round(data[hoverIndex].weight)} lbs</span>
               </div>
             )}
           </div>

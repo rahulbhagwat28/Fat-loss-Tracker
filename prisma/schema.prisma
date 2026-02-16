@@ -8,12 +8,16 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String
-  avatarUrl String?
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  email        String   @unique
+  password     String
+  name         String
+  avatarUrl    String?
+  age          Int?     // years
+  sex          String?  // "male" | "female"
+  heightInches Float?   // height in inches
+  weightLbs    Float?   // current weight in lbs (for maintenance calc)
+  createdAt    DateTime @default(now())
 
   posts          Post[]
   comments       Comment[]
@@ -76,8 +80,9 @@ model Notification {
 
 model Post {
   id        String   @id @default(cuid())
-  imageUrl  String
-  caption   String?
+  title     String?  // post title
+  imageUrl  String?  // optional for text-only posts
+  caption   String?  // main content / body
   userId    String
   createdAt DateTime @default(now())
 

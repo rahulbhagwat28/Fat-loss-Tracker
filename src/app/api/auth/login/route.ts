@@ -11,7 +11,8 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    const user = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user || !(await verifyPassword(password, user.password))) {
       return NextResponse.json(
         { error: "Invalid email or password" },
@@ -20,7 +21,16 @@ export async function POST(request: Request) {
     }
     await setSession(user.id);
     return NextResponse.json({
-      user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+        age: user.age,
+        sex: user.sex,
+        heightInches: user.heightInches,
+        weightLbs: user.weightLbs,
+      },
     });
   } catch (e) {
     console.error(e);

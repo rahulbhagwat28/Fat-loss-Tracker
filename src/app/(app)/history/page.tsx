@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import { getMaintenanceCalories } from "@/lib/maintenance";
 
 const PER_PAGE = 25;
 
@@ -20,6 +22,9 @@ type HealthLog = {
 };
 
 export default function HistoryPage() {
+  const { user } = useAuth();
+  const maintenance =
+    getMaintenanceCalories(user?.age ?? null, user?.sex ?? null, user?.heightInches ?? null, user?.weightLbs ?? null);
   const [logs, setLogs] = useState<HealthLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -127,7 +132,26 @@ export default function HistoryPage() {
                   {log.calories != null && (
                     <div className="flex justify-between gap-2">
                       <span className="text-slate-500 shrink-0">Calories</span>
-                      <span className="tabular-nums">{log.calories}</span>
+                      <span className="tabular-nums">
+                        {log.calories}
+                        {maintenance != null && (
+                          <span
+                            className={
+                              log.calories > maintenance
+                                ? " text-amber-400 ml-1"
+                                : log.calories < maintenance
+                                  ? " text-green-400 ml-1"
+                                  : " text-slate-500 ml-1"
+                            }
+                          >
+                            ({log.calories > maintenance
+                              ? `+${log.calories - maintenance} over`
+                              : log.calories < maintenance
+                                ? `${maintenance - log.calories} under`
+                                : "at maintenance"})
+                          </span>
+                        )}
+                      </span>
                     </div>
                   )}
                   {(log.protein != null || log.carbs != null || log.fat != null) && (

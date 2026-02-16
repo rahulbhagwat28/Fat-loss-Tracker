@@ -7,7 +7,8 @@ import Link from "next/link";
 
 type Post = {
   id: string;
-  imageUrl: string;
+  title: string | null;
+  imageUrl: string | null;
   caption: string | null;
   createdAt: string;
   user: { id: string; name: string; avatarUrl: string | null };
@@ -25,6 +26,7 @@ export default function FeedPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newCaption, setNewCaption] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -45,19 +47,24 @@ export default function FeedPage() {
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newImageUrl.trim()) return;
+    if (!newTitle.trim() && !newImageUrl.trim() && !newCaption.trim()) return;
     setCreateError("");
     setUploading(true);
     try {
       const res = await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl: newImageUrl.trim(), caption: newCaption.trim() || null }),
+        body: JSON.stringify({
+          title: newTitle.trim() || null,
+          imageUrl: newImageUrl.trim() || null,
+          caption: newCaption.trim() || null,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to post");
       setPosts((prev) => [{ ...data, likes: [] }, ...prev]);
       setShowCreate(false);
+      setNewTitle("");
       setNewImageUrl("");
       setNewCaption("");
     } catch (err) {
@@ -141,7 +148,27 @@ export default function FeedPage() {
           )}
           <form onSubmit={handleCreatePost} className="space-y-4">
             <div>
-              <label className="block text-sm text-slate-400 mb-1">Photo</label>
+              <label className="block text-sm text-slate-400 mb-1">Title (optional)</label>
+              <input
+                type="text"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Post title"
+                className="w-full px-3 py-2 rounded-lg bg-surface-dark border border-surface-border text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Content (optional)</label>
+              <textarea
+                value={newCaption}
+                onChange={(e) => setNewCaption(e.target.value)}
+                placeholder="What's on your mind?"
+                rows={2}
+                className="w-full px-3 py-2 rounded-lg bg-surface-dark border border-surface-border text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-slate-400 mb-1">Photo (optional)</label>
               <div className="flex gap-2 items-center">
                 <input
                   type="file"
@@ -165,19 +192,9 @@ export default function FeedPage() {
                 className="mt-2 w-full px-3 py-2 rounded-lg bg-surface-dark border border-surface-border text-white text-sm"
               />
             </div>
-            <div>
-              <label className="block text-sm text-slate-400 mb-1">Caption (optional)</label>
-              <textarea
-                value={newCaption}
-                onChange={(e) => setNewCaption(e.target.value)}
-                placeholder="What's on your mind?"
-                rows={2}
-                className="w-full px-3 py-2 rounded-lg bg-surface-dark border border-surface-border text-white text-sm placeholder-slate-500"
-              />
-            </div>
             <button
               type="submit"
-              disabled={uploading || !newImageUrl.trim()}
+              disabled={uploading || (!newTitle.trim() && !newImageUrl.trim() && !newCaption.trim())}
               className="px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-medium disabled:opacity-50"
             >
               {uploading ? "Posting..." : "Post"}

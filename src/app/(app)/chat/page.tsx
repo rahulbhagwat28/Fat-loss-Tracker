@@ -31,11 +31,82 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [sharingLog, setSharingLog] = useState(false);
   const [loadingConvs, setLoadingConvs] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [selectedUserInfo, setSelectedUserInfo] = useState<{ id: string; name: string; avatarUrl: string | null } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const today = () => new Date().toISOString().slice(0, 10);
+
+  const formatLogForShare = (log: {
+    logDate: string;
+    weight?: number | null;
+    calories?: number | null;
+    protein?: number | null;
+    carbs?: number | null;
+    fat?: number | null;
+    sleepHours?: number | null;
+    energyLevel?: number | null;
+    steps?: number | null;
+  }) => {
+    const dateStr = new Date(log.logDate + "T12:00:00").toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+    const lines: string[] = [`📋 My log for ${dateStr}`, ""];
+    if (log.weight != null) lines.push(`Weight: ${log.weight} lbs`);
+    if (log.calories != null) lines.push(`Calories: ${log.calories}`);
+    if (log.protein != null || log.carbs != null || log.fat != null) {
+      lines.push(`Macros: P ${log.protein ?? "–"} / C ${log.carbs ?? "–"} / F ${log.fat ?? "–"} g`);
+    }
+    if (log.sleepHours != null) lines.push(`Sleep: ${log.sleepHours}h`);
+    if (log.energyLevel != null) lines.push(`Energy: ${log.energyLevel}/10`);
+    if (log.steps != null) lines.push(`Steps: ${log.steps.toLocaleString()}`);
+    return lines.join("\n").trim() || "No data for this day.";
+  };
+
+  const shareTodaysLog = async () => {
+    if (!selectedUserId) return;
+    setSharingLog(true);
+    try {
+      const res = await fetch("/api/health?limit=30");
+      const logs = await res.json();
+      const todayLog = Array.isArray(logs)
+        ? logs.find((l: { logDate: string }) => l.logDate === today())
+        : null;
+      const text = todayLog
+        ? formatLogForShare(todayLog)
+        : `📋 I don't have a log for today (${new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} yet.`;
+      const msgRes = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, receiverId: selectedUserId }),
+      });
+      const data = await msgRes.json();
+      if (msgRes.ok) {
+        setMessages((prev) => [...prev, data]);
+        setConversations((prev) => {
+          const other = prev.find((c) => c.userId === selectedUserId);
+          const rest = prev.filter((c) => c.userId !== selectedUserId);
+          const updated = other
+            ? { ...other, lastAt: data.createdAt, lastText: "📋 Shared today's log" }
+            : {
+                userId: selectedUserId,
+                user: data.receiver || selectedUserInfo || { id: selectedUserId, name: "User", avatarUrl: null },
+                lastAt: data.createdAt,
+                lastText: "📋 Shared today's log",
+              };
+          return [updated, ...rest];
+        });
+      }
+    } finally {
+      setSharingLog(false);
+    }
+  };
 
   const fetchConversations = async () => {
     const res = await fetch("/api/messages/conversations");
@@ -225,6 +296,17 @@ export default function ChatPage() {
           ))
         )}
         <div ref={messagesEndRef} />
+      </div>
+      <div className="p-2 border-t border-surface-border/50 flex-shrink-0">
+        <button
+          type="button"
+          onClick={shareTodaysLog}
+          disabled={sharingLog || !selectedUserId}
+          className="w-full py-2 rounded-lg border border-surface-border text-slate-400 hover:text-white hover:bg-surface-dark/50 text-sm font-medium transition disabled:opacity-50 touch-manipulation flex items-center justify-center gap-2"
+        >
+          <span>📋</span>
+          {sharingLog ? "Sharing..." : "Share today's log"}
+        </button>
       </div>
       <form
         onSubmit={sendMessage}

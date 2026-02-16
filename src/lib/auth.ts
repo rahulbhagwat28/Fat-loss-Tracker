@@ -13,14 +13,32 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash);
 }
 
-export async function getSession(): Promise<{ id: string; email: string; name: string; avatarUrl: string | null } | null> {
+export async function getSession(): Promise<{
+  id: string;
+  email: string;
+  name: string;
+  avatarUrl: string | null;
+  age: number | null;
+  sex: string | null;
+  heightInches: number | null;
+  weightLbs: number | null;
+} | null> {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
   if (!sessionId) return null;
 
   const user = await prisma.user.findFirst({
     where: { id: sessionId },
-    select: { id: true, email: true, name: true, avatarUrl: true },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      avatarUrl: true,
+      age: true,
+      sex: true,
+      heightInches: true,
+      weightLbs: true,
+    },
   });
   return user;
 }

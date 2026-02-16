@@ -7,6 +7,10 @@ type User = {
   email: string;
   name: string;
   avatarUrl: string | null;
+  age: number | null;
+  sex: string | null;
+  heightInches: number | null;
+  weightLbs: number | null;
 } | null;
 
 type AuthContextType = {

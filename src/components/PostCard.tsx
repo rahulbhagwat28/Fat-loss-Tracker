@@ -13,7 +13,8 @@ type Comment = {
 
 type Post = {
   id: string;
-  imageUrl: string;
+  title: string | null;
+  imageUrl: string | null;
   caption: string | null;
   createdAt: string;
   user: User;
@@ -131,13 +132,25 @@ export default function PostCard({
           </button>
         )}
       </div>
-      <div className="aspect-square relative bg-surface-dark">
-        <img
-          src={post.imageUrl}
-          alt={post.caption || "Post"}
-          className="w-full h-full object-contain"
-        />
-      </div>
+      {(post.title || post.caption) && (
+        <div className="px-4 pt-2 pb-1 space-y-1">
+          {post.title && (
+            <h3 className="font-semibold text-white text-base">{post.title}</h3>
+          )}
+          {post.caption && (
+            <p className="text-slate-300 text-sm whitespace-pre-wrap">{post.caption}</p>
+          )}
+        </div>
+      )}
+      {post.imageUrl ? (
+        <div className="aspect-square relative bg-surface-dark">
+          <img
+            src={post.imageUrl}
+            alt={post.title || post.caption || "Post"}
+            className="w-full h-full object-contain"
+          />
+        </div>
+      ) : null}
       <div className="px-4 py-2 flex items-center gap-2 border-b border-surface-border/50">
         {onLike && (
           <button
@@ -156,11 +169,6 @@ export default function PostCard({
           </button>
         )}
       </div>
-      {post.caption && (
-        <div className="px-4 py-2">
-          <p className="text-slate-300 text-sm whitespace-pre-wrap">{post.caption}</p>
-        </div>
-      )}
       <div className="px-4 pb-4">
         {post.comments.length > 0 && (
           <div className="space-y-2 mb-3 max-h-48 overflow-y-auto scrollbar-thin">

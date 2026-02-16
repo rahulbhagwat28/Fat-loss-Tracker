@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import { getMaintenanceCalories } from "@/lib/maintenance";
 
 type HealthLog = {
   id: string;
@@ -20,7 +22,10 @@ type HealthLog = {
 const today = () => new Date().toISOString().slice(0, 10);
 
 export default function HealthPage() {
+  const { user } = useAuth();
   const searchParams = useSearchParams();
+  const maintenance =
+    getMaintenanceCalories(user?.age ?? null, user?.sex ?? null, user?.heightInches ?? null, user?.weightLbs ?? null);
   const dateParam = searchParams.get("date");
   const [logs, setLogs] = useState<HealthLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,6 +134,13 @@ export default function HealthPage() {
       <h1 className="font-display text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6">
         Add Log
       </h1>
+
+      {maintenance != null && (
+        <p className="mb-4 text-slate-400 text-sm">
+          Your maintenance: <span className="text-white font-medium">{maintenance} cal</span>/day
+          (set age, sex, height & weight in <a href="/profile" className="text-brand-400 hover:underline">Profile</a> to update)
+        </p>
+      )}
 
       <form
         onSubmit={handleSubmit}
@@ -267,6 +279,28 @@ export default function HealthPage() {
             {message}
           </p>
         )}
+        {maintenance != null && calories && Number(calories) > 0 && (
+          <p className="mb-4 text-sm">
+            <span className="text-slate-400">This day: </span>
+            <span className="text-white">{Number(calories)} cal</span>
+            <span className="text-slate-400"> — </span>
+            <span
+              className={
+                Number(calories) > maintenance
+                  ? "text-amber-400"
+                  : Number(calories) < maintenance
+                    ? "text-green-400"
+                    : "text-slate-400"
+              }
+            >
+              {Number(calories) > maintenance
+                ? `${Number(calories) - maintenance} over maintenance`
+                : Number(calories) < maintenance
+                  ? `${maintenance - Number(calories)} under maintenance`
+                  : "at maintenance"}
+            </span>
+          </p>
+        )}
         <button
           type="submit"
           disabled={saving}
@@ -302,7 +336,26 @@ export default function HealthPage() {
                     <span className="text-slate-400">{log.weight} lbs</span>
                   )}
                   {log.calories != null && (
-                    <span className="text-slate-400">{log.calories} cal</span>
+                    <span className="text-slate-400">
+                      {log.calories} cal
+                      {maintenance != null && (
+                        <span
+                          className={
+                            log.calories > maintenance
+                              ? " text-amber-400 ml-1"
+                              : log.calories < maintenance
+                                ? " text-green-400 ml-1"
+                                : " text-slate-500 ml-1"
+                          }
+                        >
+                          ({log.calories > maintenance
+                            ? `+${log.calories - maintenance} over`
+                            : log.calories < maintenance
+                              ? `${maintenance - log.calories} under`
+                              : "at maintenance"})
+                        </span>
+                      )}
+                    </span>
                   )}
                   {(log.protein != null || log.carbs != null || log.fat != null) && (
                     <span className="text-slate-400">

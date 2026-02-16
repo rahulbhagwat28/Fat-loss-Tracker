@@ -11,7 +11,8 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       return NextResponse.json(
         { error: "An account with this email already exists" },
@@ -20,11 +21,24 @@ export async function POST(request: Request) {
     }
     const hashed = await hashPassword(password);
     const user = await prisma.user.create({
-      data: { email, password: hashed, name },
+      data: {
+        email: normalizedEmail,
+        password: hashed,
+        name: String(name).trim(),
+      },
     });
     await setSession(user.id);
     return NextResponse.json({
-      user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl },
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+        age: user.age,
+        sex: user.sex,
+        heightInches: user.heightInches,
+        weightLbs: user.weightLbs,
+      },
     });
   } catch (e) {
     console.error(e);

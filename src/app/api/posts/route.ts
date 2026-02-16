@@ -28,12 +28,15 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await requireAuth();
-    const { imageUrl, caption } = await request.json();
-    if (!imageUrl) {
-      return NextResponse.json({ error: "imageUrl required" }, { status: 400 });
+    const { title, imageUrl, caption } = await request.json();
+    const titleStr = title && String(title).trim() ? String(title).trim() : null;
+    const image = imageUrl && String(imageUrl).trim() ? String(imageUrl).trim() : null;
+    const cap = caption && String(caption).trim() ? String(caption).trim() : null;
+    if (!titleStr && !image && !cap) {
+      return NextResponse.json({ error: "Add a title, photo, or content" }, { status: 400 });
     }
     const post = await prisma.post.create({
-      data: { userId: session.id, imageUrl, caption: caption || null },
+      data: { userId: session.id, title: titleStr, imageUrl: image, caption: cap },
       include: {
         user: { select: { id: true, name: true, avatarUrl: true } },
         comments: {
