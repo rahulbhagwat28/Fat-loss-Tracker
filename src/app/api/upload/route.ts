@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const filename = `${uuidv4()}.${ext}`;
     const pathname = `uploads/${type}/${filename}`;
 
-    const blob = await put(pathname, file, { access: "public", token: BLOB_TOKEN });
+    const blob = await put(pathname, file, { access: "public" });
     return NextResponse.json({ url: blob.url });
   } catch (e) {
     console.error(e);
