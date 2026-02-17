@@ -20,7 +20,10 @@ import { theme } from "../../src/theme";
 
 type ProfileStats = { age: number | null; sex: string | null; heightInches: number | null; weightLbs: number | null };
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 
 export default function HealthScreen() {
   const { user } = useAuth();
@@ -68,7 +71,9 @@ export default function HealthScreen() {
 
   const onDateChange = (_: unknown, date?: Date) => {
     if (Platform.OS === "android") setShowDatePicker(false);
-    if (date) setLogDate(date.toISOString().slice(0, 10));
+    if (date) {
+      setLogDate(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`);
+    }
   };
 
   const loadLogForDate = async (date: string) => {

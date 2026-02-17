@@ -41,7 +41,10 @@ export default function ChatPanel({ initialWithUserId, className = "" }: ChatPan
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const today = () => new Date().toISOString().slice(0, 10);
+  const today = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
 
   const formatLogForShare = (log: {
     logDate: string;
@@ -81,9 +84,7 @@ export default function ChatPanel({ initialWithUserId, className = "" }: ChatPan
       const todayLog = Array.isArray(logs)
         ? logs.find((l: { logDate: string }) => l.logDate === today())
         : null;
-      const text = todayLog
-        ? formatLogForShare(todayLog)
-        : `📋 I don't have a log for today (${new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} yet.`;
+      const text = todayLog ? formatLogForShare(todayLog) : "📋 I have no updates";
       const msgRes = await fetch("/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

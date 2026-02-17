@@ -45,6 +45,7 @@ export default function SmallChatWindow({
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [sharingLog, setSharingLog] = useState(false);
   const [loadingConvs, setLoadingConvs] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(true);
   const [name, setName] = useState(otherName);
@@ -121,6 +122,63 @@ export default function SmallChatWindow({
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [open, onClose]);
+
+  const today = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+
+  const formatLogForShare = (log: {
+    logDate: string;
+    weight?: number | null;
+    calories?: number | null;
+    protein?: number | null;
+    carbs?: number | null;
+    fat?: number | null;
+    sleepHours?: number | null;
+    energyLevel?: number | null;
+    steps?: number | null;
+  }) => {
+    const dateStr = new Date(log.logDate + "T12:00:00").toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+    const lines: string[] = [`📋 My log for ${dateStr}`, ""];
+    if (log.weight != null) lines.push(`Weight: ${log.weight} lbs`);
+    if (log.calories != null) lines.push(`Calories: ${log.calories}`);
+    if (log.protein != null || log.carbs != null || log.fat != null) {
+      lines.push(`Macros: P ${log.protein ?? "–"} / C ${log.carbs ?? "–"} / F ${log.fat ?? "–"} g`);
+    }
+    if (log.sleepHours != null) lines.push(`Sleep: ${log.sleepHours}h`);
+    if (log.energyLevel != null) lines.push(`Energy: ${log.energyLevel}/10`);
+    if (log.steps != null) lines.push(`Steps: ${log.steps.toLocaleString()}`);
+    return lines.join("\n").trim() || "No data for this day.";
+  };
+
+  const shareTodaysLog = async () => {
+    if (!effectiveUserId) return;
+    setSharingLog(true);
+    try {
+      const res = await fetch("/api/health?limit=30", { credentials: "include" });
+      const logs = await res.json();
+      const todayLog = Array.isArray(logs) ? logs.find((l: { logDate: string }) => l.logDate === today()) : null;
+      const text = todayLog ? formatLogForShare(todayLog) : "📋 I have no updates";
+      const msgRes = await fetch("/api/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, receiverId: effectiveUserId }),
+      });
+      const data = await msgRes.json();
+      if (msgRes.ok) {
+        setMessages((prev) => [...prev, data]);
+        setInput("");
+      }
+    } finally {
+      setSharingLog(false);
+    }
+  };
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -273,6 +331,15 @@ export default function SmallChatWindow({
               )}
               <div ref={messagesEndRef} />
             </div>
+            <button
+              type="button"
+              onClick={shareTodaysLog}
+              disabled={sharingLog}
+              className="w-full py-2 rounded-lg border border-surface-border text-slate-400 hover:text-white hover:bg-surface-dark/50 text-xs font-medium transition disabled:opacity-50 touch-manipulation flex items-center justify-center gap-2"
+            >
+              <span>📋</span>
+              {sharingLog ? "Sharing..." : "Share today's log"}
+            </button>
             <form
               onSubmit={sendMessage}
               className="flex-shrink-0 p-2 border-t border-surface-border flex gap-2"
