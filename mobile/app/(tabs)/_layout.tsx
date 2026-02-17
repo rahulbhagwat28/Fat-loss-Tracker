@@ -3,6 +3,7 @@ import { Tabs } from "expo-router";
 import FloatingChatButton from "../../src/components/FloatingChatButton";
 import { useAuth } from "../../src/auth-context";
 import { usePushToken, useNotificationResponse } from "../../src/usePushToken";
+import { useUnreadCounts } from "../../src/UnreadCountsContext";
 import { theme } from "../../src/theme";
 
 const tabIcons: Record<string, string> = {
@@ -19,8 +20,9 @@ function TabIcon({ name, color }: { name: string; color: string }) {
 
 export default function TabsLayout() {
   const { user } = useAuth();
+  const { chatUnread, notificationUnread, refresh } = useUnreadCounts();
   usePushToken(user?.id ?? null);
-  useNotificationResponse();
+  useNotificationResponse(refresh);
 
   return (
     <View style={{ flex: 1 }}>
@@ -32,6 +34,16 @@ export default function TabsLayout() {
           tabBarActiveTintColor: theme.accent,
           tabBarInactiveTintColor: theme.muted,
           tabBarIcon: ({ color }) => <TabIcon name={route.name} color={color} />,
+          tabBarBadge:
+            route.name === "chat" && chatUnread > 0
+              ? chatUnread > 99
+                ? "99+"
+                : chatUnread
+              : route.name === "more" && notificationUnread > 0
+                ? notificationUnread > 99
+                  ? "99+"
+                  : notificationUnread
+                : undefined,
         })}
       >
         <Tabs.Screen name="feed" options={{ title: "Feed" }} />

@@ -154,28 +154,38 @@ export default function FloatingChatButton() {
                       data={conversations}
                       keyExtractor={(item) => item.userId}
                       style={styles.convList}
-                      renderItem={({ item }) => (
-                        <TouchableOpacity
-                          style={styles.convRow}
-                          onPress={() => {
-                            setSelectedUserId(item.userId);
-                            setSelectedName(item.user.name);
-                            setSelectedAvatar(item.user.avatarUrl);
-                          }}
-                        >
-                          {item.user.avatarUrl ? (
-                            <Image source={{ uri: item.user.avatarUrl.startsWith("http") ? item.user.avatarUrl : `${base}${item.user.avatarUrl}` }} style={styles.convAvatar} />
-                          ) : (
-                            <View style={[styles.convAvatar, styles.avatarPlaceholder]}>
-                              <Text style={styles.avatarLetter}>{item.user.name.charAt(0)}</Text>
+                      renderItem={({ item }) => {
+                        const unread = (item.unreadCount ?? 0) > 0;
+                        return (
+                          <TouchableOpacity
+                            style={[styles.convRow, unread && styles.convRowUnread]}
+                            onPress={() => {
+                              setSelectedUserId(item.userId);
+                              setSelectedName(item.user.name);
+                              setSelectedAvatar(item.user.avatarUrl);
+                            }}
+                          >
+                            {item.user.avatarUrl ? (
+                              <Image source={{ uri: item.user.avatarUrl.startsWith("http") ? item.user.avatarUrl : `${base}${item.user.avatarUrl}` }} style={styles.convAvatar} />
+                            ) : (
+                              <View style={[styles.convAvatar, styles.avatarPlaceholder]}>
+                                <Text style={styles.avatarLetter}>{item.user.name.charAt(0)}</Text>
+                              </View>
+                            )}
+                            <View style={styles.convInfo}>
+                              <View style={styles.convNameRow}>
+                                <Text style={[styles.convName, unread && styles.convNameUnread]} numberOfLines={1}>{item.user.name}</Text>
+                                {unread && (
+                                  <View style={styles.convBadge}>
+                                    <Text style={styles.convBadgeText}>{item.unreadCount! > 99 ? "99+" : item.unreadCount}</Text>
+                                  </View>
+                                )}
+                              </View>
+                              <Text style={styles.convPreview} numberOfLines={1}>{item.lastText}</Text>
                             </View>
-                          )}
-                          <View style={styles.convInfo}>
-                            <Text style={styles.convName}>{item.user.name}</Text>
-                            <Text style={styles.convPreview} numberOfLines={1}>{item.lastText}</Text>
-                          </View>
-                        </TouchableOpacity>
-                      )}
+                          </TouchableOpacity>
+                        );
+                      }}
                       ListEmptyComponent={<Text style={styles.muted}>No conversations yet.</Text>}
                     />
                   )}
@@ -190,16 +200,21 @@ export default function FloatingChatButton() {
                     {loadingMessages ? (
                       <ActivityIndicator color="#22c55e" style={styles.loader} />
                     ) : (
-                      messages.map((m) => (
-                        <View key={m.id} style={m.senderId === user.id ? styles.msgRowRight : styles.msgRowLeft}>
-                          <View style={m.senderId === user.id ? styles.bubbleSelf : styles.bubbleOther}>
-                            <Text style={styles.bubbleText}>{m.text}</Text>
-                            <Text style={styles.bubbleTime}>
-                              {new Date(m.createdAt).toLocaleTimeString(undefined, { timeStyle: "short" })}
-                            </Text>
+                      messages.map((m) => {
+                        const isSelf = m.senderId === user.id;
+                        const isNew = !isSelf && m.receiverId === user.id && m.read === false;
+                        return (
+                          <View key={m.id} style={isSelf ? styles.msgRowRight : styles.msgRowLeft}>
+                            <View style={[isSelf ? styles.bubbleSelf : styles.bubbleOther, isNew && styles.bubbleNew]}>
+                              {isNew && <Text style={styles.newLabel}>New</Text>}
+                              <Text style={styles.bubbleText}>{m.text}</Text>
+                              <Text style={styles.bubbleTime}>
+                                {new Date(m.createdAt).toLocaleTimeString(undefined, { timeStyle: "short" })}
+                              </Text>
+                            </View>
                           </View>
-                        </View>
-                      ))
+                        );
+                      })
                     )}
                   </ScrollView>
                   <View style={styles.inputRow}>
@@ -295,9 +310,16 @@ const styles = StyleSheet.create({
   loader: { marginVertical: 24 },
   convList: { maxHeight: 280 },
   convRow: { flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: theme.border },
+  convRowUnread: { backgroundColor: "rgba(34,197,94,0.12)" },
+  bubbleNew: { borderWidth: 1, borderColor: "rgba(34,197,94,0.5)", backgroundColor: "rgba(34,197,94,0.15)" },
+  newLabel: { color: theme.accent, fontSize: 10, fontWeight: "700", marginBottom: 2, letterSpacing: 0.5 },
   convAvatar: { width: 40, height: 40, borderRadius: 20 },
   convInfo: { marginLeft: 12, flex: 1 },
-  convName: { color: theme.foreground, fontWeight: "600", fontSize: 14 },
+  convNameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  convName: { color: theme.foreground, fontWeight: "600", fontSize: 14, flex: 1 },
+  convNameUnread: { fontWeight: "700" },
+  convBadge: { minWidth: 20, height: 20, borderRadius: 10, backgroundColor: theme.error, justifyContent: "center", alignItems: "center", paddingHorizontal: 6 },
+  convBadgeText: { color: theme.foreground, fontSize: 11, fontWeight: "700" },
   convPreview: { color: theme.muted, fontSize: 12, marginTop: 2 },
   muted: { color: theme.muted, textAlign: "center", padding: 16 },
   messagesScroll: { maxHeight: 260 },

@@ -58,6 +58,7 @@ export type Conversation = {
   user: Friend & { id: string };
   lastAt: string;
   lastText: string;
+  unreadCount?: number;
 };
 
 export type Message = {
@@ -66,6 +67,7 @@ export type Message = {
   senderId: string;
   receiverId: string;
   createdAt: string;
+  read?: boolean;
   sender: User;
 };
 

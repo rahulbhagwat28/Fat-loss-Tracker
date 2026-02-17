@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const session = await requireAuth();
+    const session = await requireAuth(request);
     const sent = await prisma.message.findMany({
       where: { senderId: session.id },
       distinct: ["receiverId"],
@@ -21,6 +21,12 @@ export async function GET() {
         sender: { select: { id: true, name: true, avatarUrl: true } },
       },
     });
+    const unreadBySender = await prisma.message.groupBy({
+      by: ["senderId"],
+      where: { receiverId: session.id, read: false },
+      _count: { id: true },
+    });
+    const unreadMap = new Map(unreadBySender.map((u) => [u.senderId, u._count.id]));
     const map = new Map<
       string,
       { user: { id: string; name: string; avatarUrl: string | null }; lastAt: Date; lastText: string }
@@ -45,6 +51,7 @@ export async function GET() {
     const list = Array.from(map.entries()).map(([id, v]) => ({
       userId: id,
       ...v,
+      unreadCount: unreadMap.get(id) ?? 0,
     }));
     list.sort((a, b) => b.lastAt.getTime() - a.lastAt.getTime());
     return NextResponse.json(list);

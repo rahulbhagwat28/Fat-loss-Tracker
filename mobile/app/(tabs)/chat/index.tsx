@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Dimensions, Alert } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { apiJson, apiFetch, getApiBase } from "../../../src/api";
+import { useUnreadCounts } from "../../../src/UnreadCountsContext";
 import type { Conversation } from "../../../src/types";
 import { theme } from "../../../src/theme";
 
@@ -9,6 +10,7 @@ const { width: SW } = Dimensions.get("window");
 const AVATAR_SIZE = Math.min(48, Math.round(SW * 0.12));
 
 export default function ChatListScreen() {
+  const { refresh } = useUnreadCounts();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingAll, setDeletingAll] = useState(false);
@@ -18,7 +20,10 @@ export default function ChatListScreen() {
     apiJson<Conversation[]>("/api/messages/conversations")
       .then((data) => setConversations(Array.isArray(data) ? data : []))
       .catch(() => setConversations([]))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        refresh();
+      });
   };
 
   useFocusEffect(
@@ -76,22 +81,32 @@ export default function ChatListScreen() {
         keyExtractor={(item) => item.userId}
         contentContainerStyle={styles.list}
         ListEmptyComponent={<Text style={styles.muted}>No conversations yet. Add friends to start chatting.</Text>}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => router.push({ pathname: "/chat/[userId]", params: { userId: item.userId } })}
-          >
-            {item.user.avatarUrl ? (
-              <Image source={{ uri: item.user.avatarUrl.startsWith("http") ? item.user.avatarUrl : `${base}${item.user.avatarUrl}` }} style={styles.avatar} />
-            ) : (
-              <View style={[styles.avatar, styles.avatarPlaceholder]}><Text style={styles.avatarLetter}>{item.user.name.charAt(0)}</Text></View>
-            )}
-            <View style={styles.info}>
-              <Text style={styles.name}>{item.user.name}</Text>
-              <Text style={styles.preview} numberOfLines={1}>{item.lastText}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
+        renderItem={({ item }) => {
+          const hasUnread = (item.unreadCount ?? 0) > 0;
+          return (
+            <TouchableOpacity
+              style={[styles.row, hasUnread && styles.rowUnread]}
+              onPress={() => router.push({ pathname: "/chat/[userId]", params: { userId: item.userId } })}
+            >
+              {item.user.avatarUrl ? (
+                <Image source={{ uri: item.user.avatarUrl.startsWith("http") ? item.user.avatarUrl : `${base}${item.user.avatarUrl}` }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, styles.avatarPlaceholder]}><Text style={styles.avatarLetter}>{item.user.name.charAt(0)}</Text></View>
+              )}
+              <View style={styles.info}>
+                <View style={styles.nameRow}>
+                  <Text style={[styles.name, hasUnread && styles.nameUnread]}>{item.user.name}</Text>
+                  {hasUnread && (
+                    <View style={styles.unreadBadge}>
+                      <Text style={styles.unreadBadgeText}>{item.unreadCount! > 99 ? "99+" : item.unreadCount}</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={[styles.preview, hasUnread && styles.previewUnread]} numberOfLines={1}>{item.lastText}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
       />
     </View>
   );
@@ -113,12 +128,18 @@ const styles = StyleSheet.create({
   deleteAllBtnDisabled: { opacity: 0.6 },
   deleteAllBtnText: { color: theme.error, fontWeight: "600", fontSize: 14 },
   list: { padding: 16, paddingBottom: 40 },
-  row: { flexDirection: "row", alignItems: "center", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.border },
+  row: { flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 4, borderBottomWidth: 1, borderBottomColor: theme.border },
+  rowUnread: { backgroundColor: "rgba(52,211,153,0.08)" },
   avatar: { width: AVATAR_SIZE, height: AVATAR_SIZE, borderRadius: AVATAR_SIZE / 2 },
   avatarPlaceholder: { backgroundColor: theme.placeholder, justifyContent: "center", alignItems: "center" },
   avatarLetter: { color: theme.muted, fontWeight: "600" },
   info: { marginLeft: 12, flex: 1 },
-  name: { color: theme.foreground, fontWeight: "600" },
+  nameRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  name: { color: theme.foreground, fontWeight: "600", flex: 1 },
+  nameUnread: { fontWeight: "700" },
   preview: { color: theme.muted, marginTop: 2 },
+  previewUnread: { color: theme.foreground, fontWeight: "500" },
+  unreadBadge: { backgroundColor: theme.accent, minWidth: 20, height: 20, borderRadius: 10, justifyContent: "center", alignItems: "center", paddingHorizontal: 6 },
+  unreadBadgeText: { color: theme.background, fontSize: 11, fontWeight: "700" },
   muted: { color: theme.muted, textAlign: "center", padding: 24 },
 });

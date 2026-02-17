@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useAuth } from "../../../src/auth-context";
+import { useUnreadCounts } from "../../../src/UnreadCountsContext";
 import { apiJson, apiFetch, getApiBase } from "../../../src/api";
 import type { Message } from "../../../src/types";
 import { theme } from "../../../src/theme";
@@ -20,6 +21,7 @@ import { theme } from "../../../src/theme";
 export default function ChatThreadScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const { user } = useAuth();
+  const { refresh } = useUnreadCounts();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -59,7 +61,10 @@ export default function ChatThreadScreen() {
     apiJson<Message[]>(`/api/messages?with=${userId}`)
       .then((d) => setMessages(Array.isArray(d) ? d : []))
       .catch(() => setMessages([]))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        refresh();
+      });
     apiJson<{ userId: string; user: { name: string; avatarUrl: string | null } }[]>("/api/messages/conversations")
       .then((convs) => {
         const c = Array.isArray(convs) ? convs.find((x) => x.userId === userId) : null;
@@ -69,7 +74,7 @@ export default function ChatThreadScreen() {
         }
       })
       .catch(() => {});
-  }, [userId]);
+  }, [userId, refresh]);
 
   useEffect(() => {
     if (messages.length) {
@@ -109,16 +114,26 @@ export default function ChatThreadScreen() {
           keyExtractor={(m) => m.id}
           contentContainerStyle={styles.messagesContent}
           ListEmptyComponent={<Text style={styles.muted}>No messages yet. Say hi!</Text>}
-          renderItem={({ item }) => (
-            <View style={item.senderId === user?.id ? styles.msgRowRight : styles.msgRowLeft}>
-              <View style={item.senderId === user?.id ? styles.bubbleSelf : styles.bubbleOther}>
-                <Text style={styles.bubbleText}>{item.text}</Text>
-                <Text style={styles.bubbleTime}>
-                  {new Date(item.createdAt).toLocaleTimeString(undefined, { timeStyle: "short" })}
-                </Text>
+          renderItem={({ item }) => {
+            const isSelf = item.senderId === user?.id;
+            const isNew = !isSelf && item.receiverId === user?.id && item.read === false;
+            return (
+              <View style={isSelf ? styles.msgRowRight : styles.msgRowLeft}>
+                <View style={[
+                  isSelf ? styles.bubbleSelf : styles.bubbleOther,
+                  isNew && styles.bubbleNew,
+                ]}>
+                  {isNew && (
+                    <Text style={styles.newLabel}>New</Text>
+                  )}
+                  <Text style={styles.bubbleText}>{item.text}</Text>
+                  <Text style={[styles.bubbleTime, isSelf ? styles.bubbleTimeSelf : styles.bubbleTimeOther]}>
+                    {new Date(item.createdAt).toLocaleTimeString(undefined, { timeStyle: "short" })}
+                  </Text>
+                </View>
               </View>
-            </View>
-          )}
+            );
+          }}
         />
       )}
       <View style={styles.inputRow}>
@@ -156,8 +171,12 @@ const styles = StyleSheet.create({
   msgRowRight: { alignItems: "flex-end", marginBottom: 8 },
   bubbleSelf: { maxWidth: "85%", backgroundColor: theme.accent, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, borderBottomRightRadius: 4 },
   bubbleOther: { maxWidth: "85%", backgroundColor: theme.placeholder, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, borderBottomLeftRadius: 4 },
+  bubbleNew: { borderWidth: 1, borderColor: "rgba(34,197,94,0.5)", backgroundColor: "rgba(34,197,94,0.15)" },
+  newLabel: { color: theme.accent, fontSize: 10, fontWeight: "700", marginBottom: 2, letterSpacing: 0.5 },
   bubbleText: { color: theme.foreground, fontSize: 14 },
-  bubbleTime: { color: "rgba(236,253,245,0.8)", fontSize: 10, marginTop: 4 },
+  bubbleTime: { fontSize: 10, marginTop: 4 },
+  bubbleTimeSelf: { color: "rgba(236,253,245,0.8)" },
+  bubbleTimeOther: { color: theme.muted },
   inputRow: { flexDirection: "row", alignItems: "center", padding: 12, borderTopWidth: 1, borderTopColor: theme.border, gap: 8 },
   input: {
     flex: 1,

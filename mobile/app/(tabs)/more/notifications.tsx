@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { apiJson, apiFetch, getApiBase } from "../../../src/api";
+import { useUnreadCounts } from "../../../src/UnreadCountsContext";
 import { theme } from "../../../src/theme";
 
 type NotificationItem = {
@@ -18,6 +19,7 @@ type NotificationItem = {
   type: string;
   read: boolean;
   createdAt: string;
+  postId?: string | null;
   actor: { id: string; name: string; avatarUrl: string | null } | null;
 };
 
@@ -42,8 +44,8 @@ function label(n: NotificationItem) {
 }
 
 export default function NotificationsScreen() {
+  const { notificationUnread, refresh } = useUnreadCounts();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const base = getApiBase();
@@ -52,7 +54,7 @@ export default function NotificationsScreen() {
     try {
       const data = await apiJson<NotificationsRes>("/api/notifications");
       setNotifications(data.notifications || []);
-      setUnreadCount(data.unreadCount ?? 0);
+      refresh();
     } catch {
       setNotifications([]);
     } finally {
@@ -68,20 +70,23 @@ export default function NotificationsScreen() {
   const markRead = async (id: string) => {
     await apiFetch(`/api/notifications/${id}/read`, { method: "PATCH" });
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
-    setUnreadCount((c) => Math.max(0, c - 1));
+    refresh();
   };
 
   const markAllRead = async () => {
     await apiFetch("/api/notifications/read-all", { method: "POST" });
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    setUnreadCount(0);
+    refresh();
   };
 
   const onPress = (n: NotificationItem) => {
     if (!n.read) markRead(n.id);
     if (n.type === "friend_request" || n.type === "friend_accepted") router.push("/(tabs)/friends");
     else if (n.type === "message" && n.actor?.id) router.push({ pathname: "/chat/[userId]", params: { userId: n.actor.id } });
-    else if (n.type === "comment" || n.type === "like") router.push("/(tabs)/feed");
+    else if (n.type === "comment" || n.type === "like") {
+      if (n.postId) router.push({ pathname: "/(tabs)/feed", params: { postId: n.postId } });
+      else router.push("/(tabs)/feed");
+    }
   };
 
   const renderItem = ({ item }: { item: NotificationItem }) => (
@@ -121,7 +126,7 @@ export default function NotificationsScreen() {
 
   return (
     <View style={styles.container}>
-      {unreadCount > 0 && (
+      {notificationUnread > 0 && (
         <TouchableOpacity style={styles.markAllBtn} onPress={markAllRead}>
           <Text style={styles.markAllText}>Mark all read</Text>
         </TouchableOpacity>

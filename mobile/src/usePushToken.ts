@@ -57,19 +57,36 @@ export function usePushToken(userId: string | null) {
   }, [userId]);
 }
 
-/** Listen for notification taps and navigate. Call once in app root. */
-export function useNotificationResponse() {
+/** Listen for notification taps and navigate. Auto-opens chat when new message. Refreshes badge. */
+export function useNotificationResponse(onRefresh?: () => void) {
   useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response.notification.request.content.data as { type?: string; postId?: string; refId?: string };
-      if (data?.type === "friend_request" || data?.type === "friend_accepted") {
-        router.push("/(tabs)/friends");
-      } else       if (data?.type === "message" && data.actorId) {
-        router.push({ pathname: "/chat/[userId]", params: { userId: data.actorId as string } });
-      } else if (data?.type === "comment" || data?.type === "like") {
-        router.push("/(tabs)/feed");
+    const receivedSub = Notifications.addNotificationReceivedListener((notification) => {
+      onRefresh?.();
+      const data = notification.request.content.data as { type?: string; actorId?: string; postId?: string };
+      if (data?.type === "message" && data.actorId) {
+        router.push({ pathname: "/chat/[userId]", params: { userId: data.actorId } });
+      } else if ((data?.type === "comment" || data?.type === "like") && data.postId) {
+        router.push({ pathname: "/(tabs)/feed", params: { postId: data.postId } });
       }
     });
-    return () => sub.remove();
-  }, []);
+    const responseSub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as { type?: string; postId?: string; refId?: string; actorId?: string };
+      if (data?.type === "friend_request" || data?.type === "friend_accepted") {
+        router.push("/(tabs)/friends");
+      } else if (data?.type === "message" && data.actorId) {
+        router.push({ pathname: "/chat/[userId]", params: { userId: data.actorId as string } });
+      } else if (data?.type === "comment" || data?.type === "like") {
+        if (data.postId) {
+          router.push({ pathname: "/(tabs)/feed", params: { postId: data.postId as string } });
+        } else {
+          router.push("/(tabs)/feed");
+        }
+      }
+      onRefresh?.();
+    });
+    return () => {
+      receivedSub.remove();
+      responseSub.remove();
+    };
+  }, [onRefresh]);
 }

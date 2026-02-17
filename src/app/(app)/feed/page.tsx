@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import PostCard from "@/components/PostCard";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -23,6 +24,8 @@ type Post = {
 
 export default function FeedPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const postIdFromUrl = searchParams.get("postId");
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -44,6 +47,14 @@ export default function FeedPage() {
   useEffect(() => {
     fetchPosts();
   }, []);
+
+  useEffect(() => {
+    if (!postIdFromUrl || posts.length === 0) return;
+    const el = document.getElementById(`post-${postIdFromUrl}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [postIdFromUrl, posts]);
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,14 +228,15 @@ export default function FeedPage() {
         </div>
       ) : (
         posts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            currentUserId={user?.id}
-            onComment={handleComment}
-            onDelete={handleDeletePost}
-            onLike={handleLike}
-          />
+          <div key={post.id} id={`post-${post.id}`}>
+            <PostCard
+              post={post}
+              currentUserId={user?.id}
+              onComment={handleComment}
+              onDelete={handleDeletePost}
+              onLike={handleLike}
+            />
+          </div>
         ))
       )}
     </div>

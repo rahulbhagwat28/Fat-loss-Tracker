@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Video } from "expo-av";
+import { useLocalSearchParams } from "expo-router";
 import { apiJson, apiFetch, getApiBase } from "../../src/api";
 import { useAuth } from "../../src/auth-context";
 import type { Post, PostComment } from "../../src/types";
@@ -29,6 +30,8 @@ const isVideoUrl = (url: string) => /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url);
 
 export default function FeedScreen() {
   const { user } = useAuth();
+  const { postId: highlightPostId } = useLocalSearchParams<{ postId?: string }>();
+  const flatListRef = useRef<FlatList<Post>>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -66,6 +69,16 @@ export default function FeedScreen() {
   };
 
   useEffect(() => { load(); }, [user?.id]);
+
+  useEffect(() => {
+    if (!highlightPostId || posts.length === 0) return;
+    const idx = posts.findIndex((p) => p.id === highlightPostId);
+    if (idx >= 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToIndex({ index: idx, animated: true, viewPosition: 0.5 });
+      }, 300);
+    }
+  }, [highlightPostId, posts]);
 
   const onRefresh = () => { setRefreshing(true); load(); };
 
@@ -311,10 +324,12 @@ export default function FeedScreen() {
         </TouchableOpacity>
       </View>
       <FlatList
+        ref={flatListRef}
         data={posts}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        onScrollToIndexFailed={() => {}}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#22c55e" />}
         ListEmptyComponent={<Text style={styles.muted}>No posts yet. Tap "New post" above to add one.</Text>}
       />

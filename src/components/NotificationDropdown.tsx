@@ -95,7 +95,7 @@ export default function NotificationDropdown() {
         return "/friends";
       case "comment":
       case "like":
-        return "/feed";
+        return n.postId ? `/feed?postId=${encodeURIComponent(n.postId)}` : "/feed";
       case "message":
         return n.actor?.id ? `/chat?with=${encodeURIComponent(n.actor.id)}` : "/chat";
       default:

@@ -10,6 +10,7 @@ type Message = {
   senderId: string;
   receiverId: string;
   createdAt: string;
+  read?: boolean;
   sender: { id: string; name: string; avatarUrl: string | null };
 };
 
@@ -243,25 +244,32 @@ export default function SmallChatWindow({
               {loadingMessages ? (
                 <div className="text-slate-500 text-sm p-2">Loading...</div>
               ) : (
-                messages.map((m) => (
-                  <div
-                    key={m.id}
-                    className={`flex ${m.senderId === user?.id ? "justify-end" : "justify-start"}`}
-                  >
+                messages.map((m) => {
+                  const isSelf = m.senderId === user?.id;
+                  const isNew = !isSelf && m.receiverId === user?.id && m.read === false;
+                  return (
                     <div
-                      className={`max-w-[85%] rounded-2xl px-3 py-1.5 ${
-                        m.senderId === user?.id
-                          ? "bg-brand-500 text-white rounded-br-md"
-                          : "bg-surface-dark text-slate-200 rounded-bl-md"
-                      }`}
+                      key={m.id}
+                      className={`flex ${isSelf ? "justify-end" : "justify-start"}`}
                     >
-                      <p className="text-sm whitespace-pre-wrap break-words">{m.text}</p>
-                      <p className="text-[10px] opacity-70 mt-0.5">
-                        {new Date(m.createdAt).toLocaleTimeString(undefined, { timeStyle: "short" })}
-                      </p>
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-3 py-1.5 ${
+                          isSelf
+                            ? "bg-brand-500 text-white rounded-br-md"
+                            : "bg-surface-dark text-slate-200 rounded-bl-md"
+                        } ${isNew ? "ring-1 ring-brand-500/60 bg-brand-500/15" : ""}`}
+                      >
+                        {isNew && (
+                          <span className="block text-[9px] font-bold text-brand-400 tracking-wide uppercase mb-0.5">New</span>
+                        )}
+                        <p className="text-sm whitespace-pre-wrap break-words">{m.text}</p>
+                        <p className="text-[10px] opacity-70 mt-0.5">
+                          {new Date(m.createdAt).toLocaleTimeString(undefined, { timeStyle: "short" })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
               <div ref={messagesEndRef} />
             </div>
