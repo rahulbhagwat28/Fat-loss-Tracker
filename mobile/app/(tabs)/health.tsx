@@ -11,7 +11,7 @@ import {
   Modal,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { apiJson } from "../../src/api";
 import { useAuth } from "../../src/auth-context";
 import { getMaintenanceCalories } from "../../src/maintenance";
@@ -24,6 +24,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 
 export default function HealthScreen() {
   const { user } = useAuth();
+  const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
   const [profileStats, setProfileStats] = useState<ProfileStats | null>(null);
   const maintenance =
     (profileStats
@@ -42,7 +43,10 @@ export default function HealthScreen() {
           user.weightLbs ?? null
         )
       : null);
-  const [logDate, setLogDate] = useState(today());
+  const [logDate, setLogDate] = useState(() => {
+    if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) return dateParam;
+    return today();
+  });
   const [weight, setWeight] = useState("");
   const [calories, setCalories] = useState("");
   const [protein, setProtein] = useState("");
@@ -106,6 +110,12 @@ export default function HealthScreen() {
   useEffect(() => {
     loadProfileStats();
   }, []);
+
+  useEffect(() => {
+    if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+      setLogDate(dateParam);
+    }
+  }, [dateParam]);
 
   useEffect(() => {
     loadLogForDate(logDate);

@@ -68,13 +68,22 @@ export default function HistoryScreen() {
       year: "numeric",
     });
 
+  const handleEdit = (logDate: string) => {
+    router.push({ pathname: "/(tabs)/health", params: { date: logDate } });
+  };
+
   const renderItem = ({ item }: { item: HealthLog }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <Text style={styles.date}>{formatDate(item.logDate)}</Text>
-        <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.delBtn}>
-          <Text style={styles.delBtnText}>Delete</Text>
-        </TouchableOpacity>
+        <View style={styles.cardActions}>
+          <TouchableOpacity onPress={() => handleEdit(item.logDate)} style={styles.editBtn}>
+            <Text style={styles.editBtnText}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.delBtn}>
+            <Text style={styles.delBtnText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       <View style={styles.row}>
         {item.weight != null && <Text style={styles.label}>Weight: <Text style={styles.value}>{item.weight} lbs</Text></Text>}
@@ -146,6 +155,9 @@ const styles = StyleSheet.create({
   card: { backgroundColor: theme.card, borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: theme.border },
   cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
   date: { color: theme.foreground, fontWeight: "600", fontSize: 15 },
+  cardActions: { flexDirection: "row", gap: 8 },
+  editBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: theme.accent },
+  editBtnText: { color: theme.accent, fontSize: 12 },
   delBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: "rgba(239,68,68,0.5)" },
   delBtnText: { color: theme.error, fontSize: 12 },
   row: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
