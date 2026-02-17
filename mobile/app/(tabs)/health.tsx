@@ -8,7 +8,9 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Modal,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import { apiJson } from "../../src/api";
 import { useAuth } from "../../src/auth-context";
@@ -51,6 +53,19 @@ export default function HealthScreen() {
   const [steps, setSteps] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const logDateAsDate = () => {
+    const match = logDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return new Date();
+    const [, y, m, d] = match;
+    return new Date(Number(y), Number(m) - 1, Number(d));
+  };
+
+  const onDateChange = (_: unknown, date?: Date) => {
+    if (Platform.OS === "android") setShowDatePicker(false);
+    if (date) setLogDate(date.toISOString().slice(0, 10));
+  };
 
   const loadLogForDate = async (date: string) => {
     try {
@@ -161,7 +176,46 @@ export default function HealthScreen() {
         )}
 
         <Text style={styles.label}>Date</Text>
-        <TextInput style={styles.input} value={logDate} onChangeText={setLogDate} placeholder="YYYY-MM-DD" placeholderTextColor="#64748b" />
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setShowDatePicker(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.dateButtonText}>
+            {new Date(logDate + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", year: "numeric", month: "short", day: "numeric" })}
+          </Text>
+          <Text style={styles.dateButtonHint}>Tap to change</Text>
+        </TouchableOpacity>
+        {showDatePicker && (
+          Platform.OS === "ios" ? (
+            <Modal transparent animationType="slide">
+              <TouchableOpacity style={styles.datePickerOverlay} activeOpacity={1} onPress={() => setShowDatePicker(false)} />
+              <View style={styles.datePickerContainer}>
+                <View style={styles.datePickerHeader}>
+                  <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                    <Text style={styles.datePickerDone}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={logDateAsDate()}
+                  mode="date"
+                  display="spinner"
+                  onChange={onDateChange}
+                  maximumDate={new Date()}
+                  themeVariant="dark"
+                />
+              </View>
+            </Modal>
+          ) : (
+            <DateTimePicker
+              value={logDateAsDate()}
+              mode="date"
+              display="default"
+              onChange={onDateChange}
+              maximumDate={new Date()}
+            />
+          )
+        )}
         <Text style={styles.label}>Weight (lbs)</Text>
         <TextInput style={styles.input} value={weight} onChangeText={setWeight} placeholder="e.g. 165" keyboardType="decimal-pad" placeholderTextColor="#64748b" />
         <Text style={styles.label}>Calories</Text>
@@ -218,6 +272,31 @@ const styles = StyleSheet.create({
   maintenanceCtaTitle: { color: theme.accent, fontWeight: "700", fontSize: 16 },
   maintenanceCtaText: { color: theme.muted, fontSize: 13, marginTop: 6 },
   label: { color: theme.muted, marginBottom: 6 },
+  dateButton: {
+    backgroundColor: theme.card,
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+  },
+  dateButtonText: { color: theme.foreground, fontSize: 16, fontWeight: "600" },
+  dateButtonHint: { color: theme.muted, fontSize: 12, marginTop: 4 },
+  datePickerOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)" },
+  datePickerContainer: {
+    backgroundColor: theme.card,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 34,
+  },
+  datePickerHeader: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+  },
+  datePickerDone: { color: theme.accent, fontSize: 17, fontWeight: "600" },
   input: {
     backgroundColor: theme.card,
     borderWidth: 1,

@@ -1,6 +1,7 @@
 export default {
   expo: {
     name: "Fat Loss Tracker",
+    icon: "./assets/icon.png",
     plugins: [
       [
         "expo-notifications",
@@ -14,11 +15,19 @@ export default {
     version: "1.0.0",
     orientation: "portrait",
     userInterfaceStyle: "dark",
-    splash: { resizeMode: "contain", backgroundColor: "#0f172a" },
+    splash: {
+      image: "./assets/splash.png",
+      resizeMode: "contain",
+      backgroundColor: "#0f172a",
+    },
     assetBundlePatterns: ["**/*"],
     ios: { supportsTablet: true, bundleIdentifier: "com.fatlosstracker.app" },
     android: {
-      adaptiveIcon: { backgroundColor: "#0f172a" },
+      icon: "./assets/icon.png",
+      adaptiveIcon: {
+        foregroundImage: "./assets/icon.png",
+        backgroundColor: "#0f172a",
+      },
       package: "com.fatlosstracker.app",
     },
     scheme: "fatlosstracker",
