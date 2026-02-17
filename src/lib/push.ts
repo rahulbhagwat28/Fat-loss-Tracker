@@ -72,7 +72,8 @@ export async function sendPushToUser(
       body = `${name} — new activity`;
   }
 
-  const data = { type, ...extra } as Record<string, unknown>;
+  // Include unique id so each notification is distinct (prevents OS collapsing multiple likes/comments)
+  const data = { type, ...extra, _id: `${type}-${Date.now()}-${extra?.refId ?? Math.random().toString(36).slice(2)}` } as Record<string, unknown>;
   await Promise.all(
     tokens.map((t) => sendPushNotification(t.token, title, body, data))
   );
