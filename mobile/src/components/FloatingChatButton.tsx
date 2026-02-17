@@ -33,7 +33,60 @@ export default function FloatingChatButton() {
   const [sending, setSending] = useState(false);
   const [loadingConvs, setLoadingConvs] = useState(false);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [sharingLog, setSharingLog] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+
+  const today = () => new Date().toISOString().slice(0, 10);
+
+  const formatLogForShare = (log: {
+    logDate: string;
+    weight?: number | null;
+    calories?: number | null;
+    protein?: number | null;
+    carbs?: number | null;
+    fat?: number | null;
+    sleepHours?: number | null;
+    energyLevel?: number | null;
+    steps?: number | null;
+  }) => {
+    const dateStr = new Date(log.logDate + "T12:00:00").toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+    const lines: string[] = [`📋 My log for ${dateStr}`, ""];
+    if (log.weight != null) lines.push(`Weight: ${log.weight} lbs`);
+    if (log.calories != null) lines.push(`Calories: ${log.calories}`);
+    if (log.protein != null || log.carbs != null || log.fat != null) {
+      lines.push(`Macros: P ${log.protein ?? "–"} / C ${log.carbs ?? "–"} / F ${log.fat ?? "–"} g`);
+    }
+    if (log.sleepHours != null) lines.push(`Sleep: ${log.sleepHours}h`);
+    if (log.energyLevel != null) lines.push(`Energy: ${log.energyLevel}/10`);
+    if (log.steps != null) lines.push(`Steps: ${log.steps.toLocaleString()}`);
+    return lines.join("\n").trim() || "No data for this day.";
+  };
+
+  const shareTodaysLog = async () => {
+    if (!selectedUserId) return;
+    setSharingLog(true);
+    try {
+      const logs = await apiJson<{ logDate: string; weight?: number | null; calories?: number | null; protein?: number | null; carbs?: number | null; fat?: number | null; sleepHours?: number | null; energyLevel?: number | null; steps?: number | null }[]>("/api/health?limit=30");
+      const arr = Array.isArray(logs) ? logs : [];
+      const todayLog = arr.find((l) => l.logDate === today());
+      const text = todayLog ? formatLogForShare(todayLog) : "📋 I have no updates";
+      const data = await apiJson<Message>("/api/messages", {
+        method: "POST",
+        body: JSON.stringify({ text, receiverId: selectedUserId }),
+      });
+      setMessages((prev) => [...prev, data]);
+      setInput("");
+    } catch {
+      // ignore
+    } finally {
+      setSharingLog(false);
+    }
+  };
 
   useEffect(() => {
     if (messages.length && selectedUserId) scrollRef.current?.scrollToEnd({ animated: true });
@@ -217,6 +270,13 @@ export default function FloatingChatButton() {
                       })
                     )}
                   </ScrollView>
+                  <TouchableOpacity
+                    style={[styles.shareLogBtn, sharingLog && styles.shareLogBtnDisabled]}
+                    onPress={shareTodaysLog}
+                    disabled={sharingLog}
+                  >
+                    <Text style={styles.shareLogBtnText}>📋 {sharingLog ? "Sharing..." : "Share today's log"}</Text>
+                  </TouchableOpacity>
                   <View style={styles.inputRow}>
                     <TextInput
                       style={styles.input}
@@ -330,6 +390,16 @@ const styles = StyleSheet.create({
   bubbleOther: { maxWidth: "85%", backgroundColor: theme.placeholder, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 16, borderBottomLeftRadius: 4 },
   bubbleText: { color: theme.foreground, fontSize: 14 },
   bubbleTime: { color: "rgba(236,253,245,0.8)", fontSize: 10, marginTop: 4 },
+  shareLogBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderTopWidth: 1,
+    borderTopColor: theme.border,
+    alignItems: "center",
+    backgroundColor: theme.background,
+  },
+  shareLogBtnDisabled: { opacity: 0.6 },
+  shareLogBtnText: { color: theme.muted, fontSize: 14, fontWeight: "500" },
   inputRow: { flexDirection: "row", alignItems: "center", padding: 12, borderTopWidth: 1, borderTopColor: theme.border, gap: 8 },
   input: {
     flex: 1,
