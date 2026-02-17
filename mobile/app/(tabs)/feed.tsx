@@ -18,7 +18,7 @@ import { Video } from "expo-av";
 import { apiJson, apiFetch, getApiBase } from "../../src/api";
 import { useAuth } from "../../src/auth-context";
 import type { Post, PostComment } from "../../src/types";
-import * as FileSystem from "expo-file-system/legacy";
+import * as FileSystem from "expo-file-system";
 import { theme } from "../../src/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");

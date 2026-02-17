@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { sendPushToUser } from "@/lib/push";
 
 export async function GET(request: Request) {
   try {
@@ -62,6 +63,7 @@ export async function POST(request: Request) {
         refId: message.id,
       },
     });
+    sendPushToUser(receiverId, "message", session.name, { refId: message.id, actorId: session.id }).catch(() => {});
     return NextResponse.json(message);
   } catch (e) {
     console.error(e);

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { sendPushToUser } from "@/lib/push";
 
 // Friend request statuses: PENDING | ACCEPTED | REJECTED | CANCELLED (stored lowercase)
 export async function POST(
@@ -54,6 +55,7 @@ export async function POST(
             refId: requestId,
           },
         });
+        sendPushToUser(fr.fromId, "friend_accepted", session.name, { refId: requestId }).catch(() => {});
         return NextResponse.json({ ok: true });
       }
       if (action === "reject") {

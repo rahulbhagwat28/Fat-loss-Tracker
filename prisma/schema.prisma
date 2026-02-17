@@ -19,6 +19,7 @@ model User {
   weightLbs    Float?   // current weight in lbs (for maintenance calc)
   createdAt    DateTime @default(now())
 
+  pushTokens    PushToken[]
   posts          Post[]
   comments       Comment[]
   likes          Like[]
@@ -149,4 +150,15 @@ model Message {
 
   sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, token])
 }

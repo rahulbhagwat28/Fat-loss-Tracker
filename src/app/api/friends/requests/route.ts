@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { sendPushToUser } from "@/lib/push";
 
 export async function GET() {
   try {
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
             refId: existing.id,
           },
         });
+        sendPushToUser(toId, "friend_request", session.name, { refId: existing.id }).catch(() => {});
         return NextResponse.json({ ok: true, requestId: existing.id });
       }
       return NextResponse.json({ error: "Already handled" }, { status: 400 });
@@ -79,6 +81,7 @@ export async function POST(request: Request) {
         refId: fr.id,
       },
     });
+    sendPushToUser(toId, "friend_request", session.name, { refId: fr.id }).catch(() => {});
     return NextResponse.json({ ok: true, requestId: fr.id });
   } catch (e) {
     console.error(e);

@@ -1,6 +1,15 @@
 export default {
   expo: {
     name: "Fat Loss Tracker",
+    plugins: [
+      [
+        "expo-notifications",
+        {
+          color: "#22c55e",
+          defaultChannel: "default",
+        },
+      ],
+    ],
     slug: "fat-loss-tracker",
     version: "1.0.0",
     orientation: "portrait",
@@ -15,6 +24,9 @@ export default {
     scheme: "fatlosstracker",
     extra: {
       apiUrl: process.env.EXPO_PUBLIC_API_URL || "http://localhost:3000",
+      eas: {
+        projectId: "64306aea-eb6c-4ebf-8d88-044325303cdd",
+      },
     },
   },
 };

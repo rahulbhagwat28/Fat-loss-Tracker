@@ -1,6 +1,8 @@
 import { View, Text } from "react-native";
 import { Tabs } from "expo-router";
 import FloatingChatButton from "../../src/components/FloatingChatButton";
+import { useAuth } from "../../src/auth-context";
+import { usePushToken, useNotificationResponse } from "../../src/usePushToken";
 import { theme } from "../../src/theme";
 
 const tabIcons: Record<string, string> = {
@@ -16,6 +18,10 @@ function TabIcon({ name, color }: { name: string; color: string }) {
 }
 
 export default function TabsLayout() {
+  const { user } = useAuth();
+  usePushToken(user?.id ?? null);
+  useNotificationResponse();
+
   return (
     <View style={{ flex: 1 }}>
       <Tabs

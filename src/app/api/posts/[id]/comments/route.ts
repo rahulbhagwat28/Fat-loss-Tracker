@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { sendPushToUser } from "@/lib/push";
 
 export async function POST(
   request: Request,
@@ -30,6 +31,7 @@ export async function POST(
           postId,
         },
       });
+      sendPushToUser(post.userId, "comment", session.name, { postId, refId: comment.id }).catch(() => {});
     }
     return NextResponse.json(comment);
   } catch (e) {
