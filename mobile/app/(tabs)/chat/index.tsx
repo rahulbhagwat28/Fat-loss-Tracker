@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Dimensions, Alert } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, Dimensions, Alert, RefreshControl } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { apiJson, apiFetch, getApiBase } from "../../../src/api";
 import { useUnreadCounts } from "../../../src/UnreadCountsContext";
@@ -13,21 +13,28 @@ export default function ChatListScreen() {
   const { refresh } = useUnreadCounts();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [deletingAll, setDeletingAll] = useState(false);
 
   const loadConversations = () => {
-    setLoading(true);
     apiJson<Conversation[]>("/api/messages/conversations")
       .then((data) => setConversations(Array.isArray(data) ? data : []))
       .catch(() => setConversations([]))
       .finally(() => {
         setLoading(false);
+        setRefreshing(false);
         refresh();
       });
   };
 
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadConversations();
+  };
+
   useFocusEffect(
     useCallback(() => {
+      setLoading(true);
       loadConversations();
     }, [])
   );
@@ -80,6 +87,7 @@ export default function ChatListScreen() {
         data={conversations}
         keyExtractor={(item) => item.userId}
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
         ListEmptyComponent={<Text style={styles.muted}>No conversations yet. Add friends to start chatting.</Text>}
         renderItem={({ item }) => {
           const hasUnread = (item.unreadCount ?? 0) > 0;

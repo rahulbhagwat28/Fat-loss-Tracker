@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useAuth } from "../../../src/auth-context";
@@ -27,6 +28,7 @@ export default function ChatThreadScreen() {
   const [sending, setSending] = useState(false);
   const [sharingLog, setSharingLog] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [otherName, setOtherName] = useState("User");
   const [otherAvatar, setOtherAvatar] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
@@ -56,14 +58,14 @@ export default function ChatThreadScreen() {
     );
   };
 
-  useEffect(() => {
+  const loadMessages = useCallback(() => {
     if (!userId) return;
-    setLoading(true);
     apiJson<Message[]>(`/api/messages?with=${userId}`)
       .then((d) => setMessages(Array.isArray(d) ? d : []))
       .catch(() => setMessages([]))
       .finally(() => {
         setLoading(false);
+        setRefreshing(false);
         refresh();
       });
     apiJson<{ userId: string; user: { name: string; avatarUrl: string | null } }[]>("/api/messages/conversations")
@@ -76,6 +78,17 @@ export default function ChatThreadScreen() {
       })
       .catch(() => {});
   }, [userId, refresh]);
+
+  useEffect(() => {
+    if (!userId) return;
+    setLoading(true);
+    loadMessages();
+  }, [userId, loadMessages]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadMessages();
+  };
 
   useEffect(() => {
     if (messages.length) {
@@ -166,6 +179,7 @@ export default function ChatThreadScreen() {
           data={messages}
           keyExtractor={(m) => m.id}
           contentContainerStyle={styles.messagesContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
           ListEmptyComponent={<Text style={styles.muted}>No messages yet. Say hi!</Text>}
           renderItem={({ item }) => {
             const isSelf = item.senderId === user?.id;

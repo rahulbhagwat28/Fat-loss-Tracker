@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { router } from "expo-router";
 import { apiJson, apiFetch } from "../../../src/api";
@@ -18,6 +19,7 @@ const PER_PAGE = 25;
 export default function HistoryScreen() {
   const [logs, setLogs] = useState<HealthLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
 
   const fetchLogs = async () => {
@@ -28,7 +30,13 @@ export default function HistoryScreen() {
       setLogs([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchLogs();
   };
 
   useEffect(() => {
@@ -122,6 +130,7 @@ export default function HistoryScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
         ListFooterComponent={
           totalPages > 1 ? (
             <View style={styles.pagination}>
